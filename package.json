@@ -12,7 +12,6 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "bcryptjs": "^2.4.3",
@@ -39,7 +38,6 @@
     "eslint": "^9.22.0",
     "eslint-config-next": "^15.2.4",
     "postcss": "^8.5.8",
-    "prisma": "^6.19.3",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.8.2"
   }
