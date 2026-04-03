@@ -1,6 +1,7 @@
-import { PostCard } from "@/components/post-card";
 
-export function PostGrid({ posts }: { posts: any[] }) {
+import { PostCard, type PostCardData } from "@/components/post-card";
+
+export function PostGrid({ posts }: { posts: PostCardData[] }) {
   return (
     <section className="space-y-6">
       <div>

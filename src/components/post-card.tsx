@@ -2,7 +2,29 @@ import Link from "next/link";
 import { Heart, MessageCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
-export function PostCard({ post }: { post: any }) {
+type PostAuthor = {
+  name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+};
+
+export type PostCardData = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  cover_image?: string | null;
+  image?: string | null;
+  coverImage?: string | null;
+  topic?: string | null;
+  language?: string | null;
+  created_at?: string | null;
+  likes_count?: number;
+  comments_count?: number;
+  profiles?: PostAuthor | null;
+};
+
+export function PostCard({ post }: { post: PostCardData }) {
   const imageUrl =
     post.cover_image ||
     post.coverImage ||
@@ -13,6 +35,7 @@ export function PostCard({ post }: { post: any }) {
     <article className="group overflow-hidden rounded-[20px] border border-black/10 bg-white transition hover:-translate-y-1 hover:shadow-lg dark:border-white/10 dark:bg-[#111118]">
       <Link href={`/blog/${post.slug}`} className="block">
         <div className="aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-[#0f0f15]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt={post.title || "Post image"}
@@ -46,6 +69,7 @@ export function PostCard({ post }: { post: any }) {
 
         <div className="mt-5 flex items-center gap-3">
           {post.profiles?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={post.profiles.avatar_url}
               alt={post.profiles?.name || "Author"}
