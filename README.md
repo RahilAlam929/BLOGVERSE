@@ -12,14 +12,6 @@ A modern multi-user blog built with Next.js App Router, TypeScript, Tailwind CSS
 - Author-only edit/delete-ready backend structure
 - Responsive modern UI
 
-## Recommended blog names
-
-1. BlogVerse
-2. InkNest
-3. PostPilot
-4. StoryGrid
-5. VerseLane
-6. PixelDiary
 
 ## Run locally
 
