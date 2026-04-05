@@ -5,7 +5,11 @@ export function createClient() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing Supabase ENV variables in client");
+    if (typeof window === "undefined") {
+      throw new Error("Missing Supabase ENV variables in client.");
+    }
+
+    throw new Error("Supabase is not configured.");
   }
 
   return createBrowserClient(supabaseUrl, supabaseKey);
