@@ -1,5 +1,5 @@
 "use client";
-export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -16,7 +16,6 @@ type Block =
 
 export default function CreatePage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [form, setForm] = useState({
     title: "",
@@ -61,6 +60,8 @@ export default function CreatePage() {
   }
 
   async function uploadFile(file: File, bucketName: string) {
+    const supabase = createClient();
+
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
@@ -93,8 +94,10 @@ export default function CreatePage() {
     e.preventDefault();
     if (loading) return;
 
+    const supabase = createClient();
     const guestId = getGuestId();
     const guestName = getGuestName().trim() || "Anonymous";
+
     setLoading(true);
 
     try {
@@ -104,14 +107,8 @@ export default function CreatePage() {
       }
 
       const cleanBlocks = blocks.filter((block) => {
-        if (block.type === "image") {
-          return (block.url || "").trim() !== "";
-        }
-
-        if (block.type === "code") {
-          return (block.code || "").trim() !== "";
-        }
-
+        if (block.type === "image") return (block.url || "").trim() !== "";
+        if (block.type === "code") return (block.code || "").trim() !== "";
         return ("text" in block ? block.text : "").trim() !== "";
       });
 
@@ -214,7 +211,6 @@ export default function CreatePage() {
               <option value="TypeScript">TypeScript</option>
               <option value="Generative AI">Generative AI</option>
               <option value="Python">Python</option>
-              <option value="JavaScript">JavaScript</option>
             </select>
 
             <select
@@ -241,21 +237,11 @@ export default function CreatePage() {
 
           <div className="rounded-2xl border border-black/10 bg-slate-50 p-4">
             <div className="mb-4 flex flex-wrap gap-3">
-              <button type="button" onClick={() => addBlock("paragraph")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                + Paragraph
-              </button>
-              <button type="button" onClick={() => addBlock("heading")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                + Heading
-              </button>
-              <button type="button" onClick={() => addBlock("quote")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                + Quote
-              </button>
-              <button type="button" onClick={() => addBlock("image")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                + Image
-              </button>
-              <button type="button" onClick={() => addBlock("code")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                + Code
-              </button>
+              <button type="button" onClick={() => addBlock("paragraph")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">+ Paragraph</button>
+              <button type="button" onClick={() => addBlock("heading")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">+ Heading</button>
+              <button type="button" onClick={() => addBlock("quote")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">+ Quote</button>
+              <button type="button" onClick={() => addBlock("image")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">+ Image</button>
+              <button type="button" onClick={() => addBlock("code")} className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">+ Code</button>
             </div>
 
             <div className="space-y-5">
