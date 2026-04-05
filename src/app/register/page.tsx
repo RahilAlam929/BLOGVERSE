@@ -1,24 +1,66 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function RegisterPage() {
+export default function EditProfilePage() {
   const router = useRouter();
   const supabase = createClient();
+
+  const [loading, setLoading] = useState(false);
+  const [profileId, setProfileId] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const [form, setForm] = useState({
     name: "",
     username: "",
     bio: "",
-    email: "",
-    password: "",
+    avatar_url: "",
   });
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    async function loadProfile() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      setProfileId(user.id);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const authName = (user.user_metadata?.name as string | undefined) || "";
+      const authUsername =
+        (user.user_metadata?.username as string | undefined) || "";
+
+      if (profile) {
+        setForm({
+          name: profile.name || authName,
+          username: profile.username || authUsername,
+          bio: profile.bio || "",
+          avatar_url: profile.avatar_url || "",
+        });
+      } else {
+        setForm({
+          name: authName,
+          username: authUsername,
+          bio: "",
+          avatar_url: "",
+        });
+      }
+    }
+
+    loadProfile();
+  }, [router, supabase]);
 
   async function uploadAvatar(file: File) {
     const ext = file.name.split(".").pop();
@@ -38,24 +80,25 @@ export default function RegisterPage() {
     return data.publicUrl;
   }
 
-  async function handleRegister(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading) return;
+    if (loading || !profileId) return;
 
     setLoading(true);
 
     try {
-      let avatarUrl = "";
+      let avatarUrl = form.avatar_url;
 
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            username: form.username,
-            name: form.name,
-          },
-        },
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar(avatarFile);
+      }
+
+      const { error } = await supabase.from("profiles").upsert({
+        id: profileId,
+        name: form.name.trim(),
+        username: form.username.trim(),
+        bio: form.bio.trim(),
+        avatar_url: avatarUrl,
       });
 
       if (error) {
@@ -64,102 +107,36 @@ export default function RegisterPage() {
         return;
       }
 
-      if (!data.user) {
-        alert("Signup failed");
-        setLoading(false);
-        return;
-      }
-
-      if (avatarFile) {
-        avatarUrl = await uploadAvatar(avatarFile);
-      }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({
-          id: data.user.id,
-          name: form.name,
-          username: form.username,
-          bio: form.bio,
-          avatar_url: avatarUrl,
-        });
-
-      if (profileError) {
-        alert(profileError.message);
-        setLoading(false);
-        return;
-      }
-
-      alert("Account created successfully");
+      alert("Profile saved successfully");
       setLoading(false);
-      router.push("/login");
+      router.push(`/author/${form.username.trim()}`);
       router.refresh();
-    } catch (err: any) {
-      alert(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save profile";
+      alert(message);
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-[#f3f3f5] px-4 py-10 text-[#1f1f26] dark:bg-[#09090f] dark:text-white">
-      <div className="mx-auto max-w-md rounded-[28px] border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-[#111118] sm:p-8">
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-[0.18em] text-violet-300">
-            BuildVerse
-          </p>
-          <h1 className="mt-2 text-3xl font-black">Create account</h1>
-          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Create your creator profile and start publishing.
-          </p>
-        </div>
+    <main className="min-h-screen bg-[#f3f3f5] px-4 py-10 text-[#1f1f26]">
+      <div className="mx-auto max-w-3xl rounded-[28px] border border-black/10 bg-white p-6 sm:p-8">
+        <h1 className="text-3xl font-black">Complete your profile</h1>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Full name"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <div className="flex items-center gap-4">
+            {form.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.avatar_url}
+                alt="Profile"
+                className="h-20 w-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-20 w-20 rounded-full bg-slate-300" />
+            )}
 
-          <input
-            type="text"
-            placeholder="Username"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
-            value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
-            required
-          />
-
-          <textarea
-            rows={3}
-            placeholder="Short bio"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-          />
-
-          <input
-            type="email"
-            placeholder="Email address"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
-
-          <div className="rounded-2xl border border-black/10 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#0f0f15]">
-            <p className="mb-3 text-sm font-semibold">Profile picture</p>
             <input
               type="file"
               accept="image/*"
@@ -168,21 +145,40 @@ export default function RegisterPage() {
             />
           </div>
 
+          <input
+            type="text"
+            placeholder="Your name"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+
+          <input
+            type="text"
+            placeholder="Username"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            required
+          />
+
+          <textarea
+            rows={4}
+            placeholder="Your bio"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
+            value={form.bio}
+            onChange={(e) => setForm({ ...form, bio: e.target.value })}
+          />
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-[#6d5efc] px-4 py-3 font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-[#6d5efc] px-5 py-3 font-semibold text-white disabled:opacity-60"
           >
-            {loading ? "Creating account..." : "Register"}
+            {loading ? "Saving..." : "Save profile"}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-          Already have an account?{" "}
-          <Link href="/login" className="text-violet-600">
-            Login
-          </Link>
-        </p>
       </div>
     </main>
   );

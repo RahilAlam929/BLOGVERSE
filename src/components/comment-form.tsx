@@ -2,39 +2,39 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { getGuestId, getGuestName } from "@/lib/guest";
 
 export function CommentForm({
   postId,
-  userId,
   parentId,
 }: {
   postId: number;
-  userId: string | null;
   parentId: number | null;
 }) {
   const supabase = createClient();
-  const router = useRouter();
-  const [content, setContent] = useState("");
+  const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleComment(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
 
-    if (!userId) {
-      alert("Please login first");
+    const guestId = getGuestId();
+    const guestName = getGuestName().trim() || "Anonymous";
+
+    if (!text.trim()) {
+      alert("Please enter a comment");
       return;
     }
-
-    if (!content.trim()) return;
 
     setLoading(true);
 
     const { error } = await supabase.from("comments").insert({
       post_id: postId,
-      user_id: userId,
       parent_id: parentId,
-      content: content.trim(),
+      content: text.trim(),
+      guest_id: guestId || null,
+      guest_name: guestName,
     });
 
     setLoading(false);
@@ -44,25 +44,25 @@ export function CommentForm({
       return;
     }
 
-    setContent("");
-    router.refresh();
+    setText("");
+    window.location.reload();
   }
 
   return (
-    <form onSubmit={handleComment} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={parentId ? 3 : 5}
-        placeholder={parentId ? "Write a reply..." : "Your comment here"}
-        className="w-full rounded-[16px] border border-black/10 bg-white px-4 py-4 text-[#1f1f26] outline-none placeholder:text-slate-400"
+        rows={4}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write your comment..."
+        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
       />
       <button
         type="submit"
         disabled={loading}
-        className="rounded-full bg-[#1f1f26] px-6 py-3 font-semibold text-white disabled:opacity-60"
+        className="rounded-full bg-[#6d5efc] px-5 py-2.5 font-semibold text-white disabled:opacity-60"
       >
-        {loading ? "Posting..." : parentId ? "Reply" : "Post comment"}
+        {loading ? "Posting..." : "Post comment"}
       </button>
     </form>
   );

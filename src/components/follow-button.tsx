@@ -2,15 +2,14 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getGuestId, getGuestName } from "@/lib/guest";
 
 export function FollowButton({
-  currentUserId,
-  authorId,
+  authorGuestId,
   initialFollowing,
   initialFollowersCount,
 }: {
-  currentUserId: string | null;
-  authorId: string;
+  authorGuestId: string;
   initialFollowing: boolean;
   initialFollowersCount: number;
 }) {
@@ -20,25 +19,24 @@ export function FollowButton({
   const [loading, setLoading] = useState(false);
 
   async function toggleFollow() {
-    if (!currentUserId) {
-      alert("Please login first");
-      return;
-    }
+    const guestId = getGuestId();
+    const guestName = getGuestName().trim() || "Anonymous";
 
-    if (currentUserId === authorId) {
+    if (!guestId) return;
+    if (guestId === authorGuestId) {
       alert("You cannot follow yourself");
       return;
     }
-
     if (loading) return;
+
     setLoading(true);
 
     if (following) {
       const { error } = await supabase
         .from("follows")
         .delete()
-        .eq("follower_id", currentUserId)
-        .eq("following_id", authorId);
+        .eq("guest_id", guestId)
+        .eq("following_id", authorGuestId);
 
       if (!error) {
         setFollowing(false);
@@ -46,8 +44,9 @@ export function FollowButton({
       }
     } else {
       const { error } = await supabase.from("follows").insert({
-        follower_id: currentUserId,
-        following_id: authorId,
+        guest_id: guestId,
+        guest_name: guestName,
+        following_id: authorGuestId,
       });
 
       if (!error) {
@@ -59,15 +58,13 @@ export function FollowButton({
     setLoading(false);
   }
 
-  if (currentUserId === authorId) return null;
-
   return (
     <button
       onClick={toggleFollow}
       disabled={loading}
       className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
         following
-          ? "border border-black/10 bg-white text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+          ? "border border-black/10 bg-white text-slate-700"
           : "bg-[#6d5efc] text-white"
       }`}
     >

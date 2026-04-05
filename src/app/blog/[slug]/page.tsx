@@ -1,60 +1,84 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/utils";
-import { notFound } from "next/navigation";
 import { LikeButton } from "@/components/like-button";
 import { CommentForm } from "@/components/comment-form";
 import { CommentThread } from "@/components/comment-thread";
-import { DiscoverMore } from "@/components/discover-more";
-import { ArticleToc } from "@/components/article-toc";
 import { ShareSection } from "@/components/share-section";
-import { EditPostButton } from "@/components/edit-post-button";
-import { DeletePostButton } from "@/components/delete-post-button";
 import { FollowButton } from "@/components/follow-button";
+import { DeletePostButton } from "@/components/delete-post-button";
 
-function getHeadings(blocks: any[]) {
-  let headingCount = 0;
+type Block =
+  | { type: "paragraph"; text: string }
+  | { type: "heading"; text: string }
+  | { type: "quote"; text: string }
+  | { type: "image"; url: string; caption?: string }
+  | { type: "code"; language?: string; code: string };
 
-  return blocks
-    .filter((block) => block.type === "heading" && block.text)
-    .map((block) => ({
-      id: `heading-${headingCount++}`,
-      text: block.text,
-    }));
+type PostData = {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt?: string | null;
+  content?: string | null;
+  content_blocks?: Block[] | null;
+  cover_image?: string | null;
+  category?: string | null;
+  topic?: string | null;
+  language?: string | null;
+  created_at?: string | null;
+  guest_id?: string | null;
+  guest_name?: string | null;
+  likes?: { id: number; guest_id?: string | null }[] | null;
+};
+
+type CommentItem = {
+  id: number;
+  post_id: number;
+  parent_id?: number | null;
+  content: string;
+  guest_name?: string | null;
+  created_at?: string | null;
+};
+
+type RelatedPost = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  cover_image?: string | null;
+  created_at?: string | null;
+  guest_name?: string | null;
+  topic?: string | null;
+  language?: string | null;
+};
+
+function makeHeadingId(text: string) {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w-]/g, "");
 }
 
-function renderBlock(
-  block: any,
-  index: number,
-  headingIndexRef: { value: number }
-) {
+function renderBlock(block: Block, index: number) {
   if (block.type === "heading") {
-    const id = `heading-${headingIndexRef.value++}`;
+    const headingId = makeHeadingId(block.text);
 
     return (
       <h2
         key={index}
-        id={id}
-        className="mt-16 scroll-mt-24 text-3xl font-black leading-tight text-[#1f1f26] dark:text-white sm:text-4xl"
+        id={headingId}
+        className="group mt-14 scroll-mt-24 text-2xl font-black leading-tight text-[#1f1f26] sm:text-3xl lg:text-4xl"
       >
-        {block.text}
+        <a href={`#${headingId}`} className="inline-flex items-center gap-2">
+          {block.text}
+          <span className="text-base opacity-0 transition group-hover:opacity-100">
+            #
+          </span>
+        </a>
       </h2>
-    );
-  }
-
-  if (block.type === "image") {
-    return (
-      <figure key={index} className="mt-10">
-        <img
-          src={block.url}
-          alt={block.caption || "Article image"}
-          className="w-full rounded-[22px] border border-black/10 object-cover dark:border-white/10"
-        />
-        {block.caption ? (
-          <figcaption className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            {block.caption}
-          </figcaption>
-        ) : null}
-      </figure>
     );
   }
 
@@ -62,10 +86,28 @@ function renderBlock(
     return (
       <blockquote
         key={index}
-        className="mt-10 border-l-4 border-violet-500 pl-5 text-xl italic leading-9 text-slate-700 dark:text-slate-300"
+        className="mt-8 rounded-r-2xl border-l-4 border-violet-500 bg-violet-50 px-5 py-4 text-lg italic leading-8 text-slate-700"
       >
         {block.text}
       </blockquote>
+    );
+  }
+
+  if (block.type === "image") {
+    return (
+      <figure key={index} className="mt-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={block.url}
+          alt={block.caption || "Article image"}
+          className="w-full rounded-[22px] border border-black/10 object-cover"
+        />
+        {block.caption ? (
+          <figcaption className="mt-3 text-sm text-slate-500">
+            {block.caption}
+          </figcaption>
+        ) : null}
+      </figure>
     );
   }
 
@@ -73,9 +115,14 @@ function renderBlock(
     return (
       <div
         key={index}
-        className="mt-10 overflow-x-auto rounded-[18px] border border-black/10 bg-[#111827] p-5 dark:border-white/10"
+        className="mt-8 overflow-x-auto rounded-[20px] border border-slate-800 bg-[#0f172a] p-5"
       >
-        <pre className="text-sm leading-7 text-slate-100">
+        {block.language ? (
+          <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+            {block.language}
+          </div>
+        ) : null}
+        <pre className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-100">
           <code>{block.code}</code>
         </pre>
       </div>
@@ -85,14 +132,14 @@ function renderBlock(
   return (
     <p
       key={index}
-      className="mt-7 whitespace-pre-wrap text-[19px] leading-9 text-slate-700 dark:text-slate-300"
+      className="mt-6 whitespace-pre-wrap text-[17px] leading-8 text-slate-700 sm:text-[19px] sm:leading-9"
     >
       {block.text}
     </p>
   );
 }
 
-export default async function BlogDetailPage({
+export default async function BlogSlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -100,195 +147,240 @@ export default async function BlogDetailPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: post, error } = await supabase
+  const { data: rawPost, error } = await supabase
     .from("posts")
     .select(`
       *,
-      profiles(name, username, avatar_url),
-      likes(id, user_id)
+      likes(id, guest_id)
     `)
     .eq("slug", slug)
     .single();
 
-  if (error || !post) return notFound();
+  if (error || !rawPost) {
+    notFound();
+  }
 
-  const { data: comments } = await supabase
+  const post = rawPost as PostData;
+
+  const { data: rawComments } = await supabase
     .from("comments")
-    .select(`
-      *,
-      profiles(name, username, avatar_url)
-    `)
+    .select("*")
     .eq("post_id", post.id)
     .order("created_at", { ascending: true });
 
-  const { data: relatedPosts } = await supabase
-    .from("posts")
-    .select(`
-      *,
-      profiles(name, username, avatar_url)
-    `)
-    .neq("id", post.id)
-    .eq("category", post.category)
-    .order("created_at", { ascending: false })
-    .limit(4);
+  const comments = (rawComments ?? []) as CommentItem[];
 
-  const { data: followers } = await supabase
+  const { data: rawFollowers } = await supabase
     .from("follows")
-    .select("id, follower_id")
-    .eq("following_id", post.user_id);
+    .select("id, guest_id")
+    .eq("following_id", post.guest_id || "");
 
-  const isFollowing = !!followers?.find((item: any) => item.follower_id === user?.id);
-  const followersCount = followers?.length ?? 0;
+  const followersCount = rawFollowers?.length ?? 0;
 
-  const blocks =
+  const { data: rawRelated } = await supabase
+    .from("posts")
+    .select("*")
+    .neq("id", post.id)
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  const relatedPosts = (rawRelated ?? []) as RelatedPost[];
+
+  const blocks: Block[] =
     Array.isArray(post.content_blocks) && post.content_blocks.length > 0
       ? post.content_blocks
-      : [{ type: "paragraph", text: post.content }];
+      : post.content
+      ? [{ type: "paragraph", text: post.content }]
+      : [];
 
-  const headings = getHeadings(blocks);
-  const headingIndexRef = { value: 0 };
-
-  const likedByUser = !!post.likes?.find((like: any) => like.user_id === user?.id);
-  const likesCount = post.likes?.length ?? 0;
+  const headings = blocks
+    .filter((block): block is Extract<Block, { type: "heading" }> => block.type === "heading")
+    .map((block) => ({
+      text: block.text,
+      id: makeHeadingId(block.text),
+    }));
 
   return (
-    <main className="min-h-screen bg-[#f3f3f5] text-[#1f1f26] dark:bg-[#09090f] dark:text-white">
-      <div className="mx-auto max-w-[1380px] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,860px)_260px]">
-          <article className="min-w-0">
-            <div className="mb-8 flex flex-wrap gap-2">
-              {post.category ? (
-                <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  {post.category}
-                </span>
-              ) : null}
+    <main className="min-h-screen bg-[#f3f3f5] text-[#1f1f26]">
+      <div className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6 lg:px-8">
+        <article className="mx-auto max-w-[850px]">
+          <div className="mb-6 flex flex-wrap gap-2">
+            {post.category ? (
+              <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm">
+                {post.category}
+              </span>
+            ) : null}
 
-              {post.topic ? (
-                <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  {post.topic}
-                </span>
-              ) : null}
+            {post.topic ? (
+              <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm">
+                {post.topic}
+              </span>
+            ) : null}
 
-              {post.language ? (
-                <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  {post.language}
-                </span>
-              ) : null}
+            {post.language ? (
+              <span className="rounded-md border border-black/10 bg-white px-3 py-1 text-sm">
+                {post.language}
+              </span>
+            ) : null}
+          </div>
+
+          <h1 className="text-3xl font-black leading-tight sm:text-5xl lg:text-6xl">
+            {post.title}
+          </h1>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-6">
+            <div>
+              <p className="text-lg font-semibold">
+                {post.guest_name || "Anonymous"}
+              </p>
+              <p className="text-sm text-slate-500">
+                {formatDate(post.created_at)}
+              </p>
             </div>
 
-            <h1 className="max-w-5xl text-4xl font-black leading-[1.02] tracking-tight text-[#1f1f26] dark:text-white sm:text-5xl lg:text-[72px]">
-              {post.title}
-            </h1>
-
-            <div className="mt-8 flex flex-col gap-5 border-b border-black/10 pb-8 dark:border-white/10 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-4">
-                {post.profiles?.avatar_url ? (
-                  <img
-                    src={post.profiles.avatar_url}
-                    alt={post.profiles?.name || "Author"}
-                    className="h-14 w-14 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-14 w-14 rounded-full bg-slate-300" />
-                )}
-
-                <div>
-                  <p className="text-lg font-semibold text-[#1f1f26] dark:text-white">
-                    {post.profiles?.name || "Anonymous"}
-                  </p>
-                  <p className="text-base text-slate-500 dark:text-slate-400">
-                    {formatDate(post.created_at)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {post.guest_id ? (
                 <FollowButton
-                  currentUserId={user?.id || null}
-                  authorId={post.user_id}
-                  initialFollowing={isFollowing}
+                  authorGuestId={post.guest_id}
+                  initialFollowing={false}
                   initialFollowersCount={followersCount}
                 />
+              ) : null}
 
-                <EditPostButton
-                  postId={post.id}
-                  userId={user?.id || null}
-                  authorId={post.user_id}
-                />
-
-                <DeletePostButton
-                  postId={post.id}
-                  postTitle={post.title}
-                  userId={user?.id || null}
-                  authorId={post.user_id}
-                />
-              </div>
+              <DeletePostButton
+                postId={post.id}
+                authorGuestId={post.guest_id}
+              />
             </div>
+          </div>
 
-            <p className="mt-10 max-w-4xl text-[24px] leading-10 text-slate-700 dark:text-slate-300">
+          {post.excerpt ? (
+            <p className="mt-8 text-lg leading-8 text-slate-700 sm:text-[22px] sm:leading-10">
               {post.excerpt}
             </p>
+          ) : null}
+
+          {headings.length > 0 ? (
+            <div className="mt-8 rounded-[20px] border border-black/10 bg-white p-5">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                On this page
+              </p>
+              <div className="mt-3 flex flex-col gap-2">
+                {headings.map((item) => (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="text-sm text-slate-700 hover:text-violet-600"
+                  >
+                    {item.text}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {post.cover_image ? (
+            <div className="mt-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.cover_image}
+                alt={post.title}
+                className="w-full rounded-[24px] border border-black/10 object-cover"
+              />
+            </div>
+          ) : null}
+
+          <div className="mt-10">
+            {blocks.length > 0 ? (
+              blocks.map((block, index) => renderBlock(block, index))
+            ) : (
+              <p className="text-slate-600">No content available.</p>
+            )}
+          </div>
+
+          <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-black/10 pt-8">
+            <LikeButton
+              postId={post.id}
+              initialLiked={false}
+              initialCount={post.likes?.length ?? 0}
+            />
+          </div>
+
+          <ShareSection />
+
+          <section className="mt-16">
+            <h2 className="text-2xl font-black sm:text-3xl">Comments</h2>
+
+            <div className="mt-6">
+              <CommentForm postId={post.id} parentId={null} />
+            </div>
 
             <div className="mt-10">
-              <img
-                src={post.cover_image || "https://via.placeholder.com/1400x800"}
-                alt={post.title}
-                className="w-full rounded-[24px] border border-black/10 object-cover dark:border-white/10"
-              />
+              <CommentThread comments={comments} postId={post.id} />
             </div>
+          </section>
+        </article>
 
-            <div className="mt-12">
-              {blocks.map((block: any, index: number) =>
-                renderBlock(block, index, headingIndexRef)
-              )}
+        <section className="mt-20">
+          <div className="mb-8 flex items-center justify-between">
+            <h2 className="text-2xl font-black sm:text-3xl">
+              New articles
+            </h2>
+          </div>
+
+          {relatedPosts.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {relatedPosts.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/blog/${item.slug}`}
+                  className="group overflow-hidden rounded-[24px] border border-black/10 bg-white transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <div className="aspect-[16/10] overflow-hidden bg-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.cover_image || "https://via.placeholder.com/800x500"}
+                      alt={item.title}
+                      className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]"
+                    />
+                  </div>
+
+                  <div className="p-5">
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {item.topic ? (
+                        <span className="rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-xs text-slate-600">
+                          {item.topic}
+                        </span>
+                      ) : null}
+
+                      {item.language ? (
+                        <span className="rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-xs text-slate-600">
+                          {item.language}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <h3 className="text-xl font-black leading-tight">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-3 line-clamp-3 text-slate-600">
+                      {item.excerpt}
+                    </p>
+
+                    <div className="mt-4 text-sm text-slate-500">
+                      {item.guest_name || "Anonymous"} • {formatDate(item.created_at)}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
-
-            <div className="mt-12 flex flex-wrap items-center gap-4 border-t border-black/10 pt-8 dark:border-white/10">
-              <LikeButton
-                postId={post.id}
-                initialLiked={likedByUser}
-                initialCount={likesCount}
-                userId={user?.id || null}
-              />
+          ) : (
+            <div className="rounded-[24px] border border-black/10 bg-white p-8 text-slate-500">
+              No more articles yet.
             </div>
-
-            <ShareSection />
-
-            <section className="mt-16">
-              <h2 className="text-3xl font-black">Comments</h2>
-
-              <div className="mt-6">
-                <CommentForm
-                  postId={post.id}
-                  userId={user?.id || null}
-                  parentId={null}
-                />
-              </div>
-
-              <div className="mt-10">
-                <CommentThread
-                  comments={comments || []}
-                  postId={post.id}
-                  userId={user?.id || null}
-                />
-              </div>
-            </section>
-
-            <div className="mt-20">
-              <DiscoverMore posts={relatedPosts || []} />
-            </div>
-          </article>
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-24">
-              <ArticleToc headings={headings} />
-            </div>
-          </aside>
-        </div>
+          )}
+        </section>
       </div>
     </main>
   );

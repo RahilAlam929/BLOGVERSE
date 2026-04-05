@@ -9,12 +9,12 @@ export default function EditProfilePage() {
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
+  const [profileId, setProfileId] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [profileId, setProfileId] = useState<string>("");
-  const [username, setUsername] = useState("");
 
   const [form, setForm] = useState({
     name: "",
+    username: "",
     bio: "",
     avatar_url: "",
   });
@@ -30,19 +30,31 @@ export default function EditProfilePage() {
         return;
       }
 
+      setProfileId(user.id);
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+
+      const authName = (user.user_metadata?.name as string | undefined) || "";
+      const authUsername =
+        (user.user_metadata?.username as string | undefined) || "";
 
       if (profile) {
-        setProfileId(profile.id);
-        setUsername(profile.username || "");
         setForm({
-          name: profile.name || "",
+          name: profile.name || authName,
+          username: profile.username || authUsername,
           bio: profile.bio || "",
           avatar_url: profile.avatar_url || "",
+        });
+      } else {
+        setForm({
+          name: authName,
+          username: authUsername,
+          bio: "",
+          avatar_url: "",
         });
       }
     }
@@ -81,14 +93,13 @@ export default function EditProfilePage() {
         avatarUrl = await uploadAvatar(avatarFile);
       }
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          name: form.name,
-          bio: form.bio,
-          avatar_url: avatarUrl,
-        })
-        .eq("id", profileId);
+      const { error } = await supabase.from("profiles").upsert({
+        id: profileId,
+        name: form.name.trim(),
+        username: form.username.trim(),
+        bio: form.bio.trim(),
+        avatar_url: avatarUrl,
+      });
 
       if (error) {
         alert(error.message);
@@ -96,24 +107,27 @@ export default function EditProfilePage() {
         return;
       }
 
-      alert("Profile updated");
-      router.push(`/author/${username}`);
+      alert("Profile saved successfully");
+      setLoading(false);
+      router.push(`/author/${form.username.trim()}`);
       router.refresh();
-    } catch (err: any) {
-      alert(err.message || "Failed to update profile");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save profile";
+      alert(message);
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
-    <main className="min-h-screen bg-[#f3f3f5] px-4 py-10 text-[#1f1f26] dark:bg-[#09090f] dark:text-white">
-      <div className="mx-auto max-w-3xl rounded-[28px] border border-black/10 bg-white p-6 dark:border-white/10 dark:bg-[#111118] sm:p-8">
-        <h1 className="text-3xl font-black">Edit profile</h1>
+    <main className="min-h-screen bg-[#f3f3f5] px-4 py-10 text-[#1f1f26]">
+      <div className="mx-auto max-w-3xl rounded-[28px] border border-black/10 bg-white p-6 sm:p-8">
+        <h1 className="text-3xl font-black">Complete your profile</h1>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div className="flex items-center gap-4">
             {form.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={form.avatar_url}
                 alt="Profile"
@@ -134,15 +148,25 @@ export default function EditProfilePage() {
           <input
             type="text"
             placeholder="Your name"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+
+          <input
+            type="text"
+            placeholder="Username"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            required
           />
 
           <textarea
             rows={4}
             placeholder="Your bio"
-            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none dark:border-white/10 dark:bg-white/5"
+            className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none"
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
           />
