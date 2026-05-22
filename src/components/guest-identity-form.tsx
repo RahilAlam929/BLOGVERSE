@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { getGuestName, setGuestName } from "@/lib/guest";
+import Link from "next/link";
+import { Pencil } from "lucide-react";
 
-export function GuestIdentityForm() {
   const [name, setName] = useState(getGuestName());
 
   function saveName() {
