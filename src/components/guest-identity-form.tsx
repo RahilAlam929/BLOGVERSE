@@ -1,17 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { useState } from "react";
+import { getGuestName, setGuestName } from "@/lib/guest";
 
+export default function GuestIdentityForm() {
   const [name, setName] = useState(getGuestName());
 
   function saveName() {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
       alert("Please enter your name");
       return;
     }
 
-    setGuestName(name);
+    setGuestName(trimmedName);
+    setName(trimmedName);
     alert("Name saved");
   }
 
@@ -20,18 +24,21 @@ import { Pencil } from "lucide-react";
       <p className="mb-2 text-sm font-semibold text-slate-700">
         Your display name
       </p>
+
       <div className="flex gap-3">
         <input
           type="text"
           placeholder="Enter your name"
-          className="w-full rounded-xl border border-black/10 px-4 py-3 outline-none"
+          className="w-full rounded-xl border border-black/10 px-4 py-3 outline-none focus:border-black/20"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(event) => setName(event.target.value)}
+          maxLength={50}
         />
+
         <button
           type="button"
           onClick={saveName}
-          className="rounded-xl bg-[#6d5efc] px-4 py-3 font-semibold text-white"
+          className="rounded-xl bg-[#6d5efc] px-4 py-3 font-semibold text-white transition hover:opacity-90"
         >
           Save
         </button>
