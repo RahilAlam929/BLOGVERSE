@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils";
-import { getGuestId, getGuestName } from "@/lib/guest";
-import GuestIdentityForm from "@/components/guest-identity-form";
 type Block =
   | { type: "paragraph"; text: string }
   | { type: "heading"; text: string }
@@ -162,10 +160,6 @@ export default function CreatePage() {
             BuildVerse
           </p>
           <h1 className="mt-2 text-3xl font-black">Create article</h1>
-        </div>
-
-        <div className="mb-6">
-          <GuestIdentityForm />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
