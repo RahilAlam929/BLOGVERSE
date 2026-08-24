@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { slugify } from "@/lib/utils";
 import { getGuestId, getGuestName } from "@/lib/guest";
-import { GuestIdentityForm } from "@/components/guest-identity-form";
-
+import GuestIdentityForm from "@/components/guest-identity-form";
 type Block =
   | { type: "paragraph"; text: string }
   | { type: "heading"; text: string }
