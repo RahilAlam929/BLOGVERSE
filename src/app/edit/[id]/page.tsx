@@ -1,3 +1,4 @@
+import { getGuestId, getGuestName } from "@/lib/guest";
 "use client";
 
 import { useState } from "react";
