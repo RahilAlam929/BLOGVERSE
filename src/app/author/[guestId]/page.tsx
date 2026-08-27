@@ -17,6 +17,12 @@ type GuestPost = {
   guest_name?: string | null;
 };
 
+type Profile = {
+  name?: string | null;
+  username?: string | null;
+  avatar_url?: string | null;
+};
+
 export default async function GuestAuthorPage({
   params,
 }: {
@@ -27,7 +33,9 @@ export default async function GuestAuthorPage({
 
   const { data: postsData } = await supabase
     .from("posts")
-    .select("*")
+    .select(
+      "id,title,slug,excerpt,cover_image,created_at,topic,language,guest_id,guest_name"
+    )
     .eq("guest_id", guestId)
     .order("created_at", { ascending: false });
 
@@ -35,7 +43,33 @@ export default async function GuestAuthorPage({
 
   if (!posts.length) return notFound();
 
-  const authorName = posts[0]?.guest_name || "Anonymous";
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("name, username, avatar_url")
+    .eq("id", guestId)
+    .maybeSingle();
+
+  const profile = profileData as Profile | null;
+
+  const authorName =
+    profile?.name ||
+    profile?.username ||
+    posts[0]?.guest_name ||
+    "Anonymous";
+
+  const username = profile?.username
+    ? `@${profile.username}`
+    : "@writer";
+
+  const avatar = profile?.avatar_url;
+
+  const initials = authorName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 
   const { data: followersData } = await supabase
     .from("follows")
@@ -45,102 +79,164 @@ export default async function GuestAuthorPage({
   const followersCount = followersData?.length ?? 0;
 
   return (
-    <main className="min-h-screen bg-[#f3f3f5] px-4 py-10 text-[#1f1f26]">
-      <div className="mx-auto max-w-6xl">
-        <div className="rounded-[28px] border border-black/10 bg-white p-8">
-          <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center">
-              <div className="h-28 w-28 rounded-full bg-slate-300" />
+    <main className="min-h-screen bg-[#050505] px-5 py-10 text-white sm:px-8 lg:px-10 lg:py-14">
+      <div className="mx-auto max-w-7xl">
+        <section className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-[#0a0a0a] p-7 sm:p-10 lg:p-12">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-violet-600/10 blur-[100px]"
+          />
+
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-blue-600/10 blur-[100px]"
+          />
+
+          <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div className="h-28 w-28 shrink-0 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.06] shadow-2xl">
+                {avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={avatar}
+                    alt={authorName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-3xl font-black">
+                    {initials || "U"}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-4xl font-black">{authorName}</h1>
-                  <span className="text-slate-500">@guest</span>
+                  <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+                    {authorName}
+                  </h1>
+
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/40">
+                    {username}
+                  </span>
                 </div>
 
-                <p className="mt-4 text-slate-500">
-                  Guest creator on BuildVerse
+                <p className="mt-3 max-w-xl text-sm leading-6 text-white/40">
+                  Writer and creator sharing ideas, experiences and useful
+                  knowledge with the BlogVerse community.
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-6 text-sm font-medium text-slate-600">
-                  <span>
-                    <strong className="text-[#1f1f26]">{posts.length}</strong> posts
-                  </span>
-                  <span>
-                    <strong className="text-[#1f1f26]">{followersCount}</strong> followers
-                  </span>
+                <div className="mt-6 flex flex-wrap gap-7">
+                  <div>
+                    <p className="text-xl font-black">{posts.length}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">
+                      Posts
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xl font-black">{followersCount}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">
+                      Followers
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <FollowButton
-                authorGuestId={guestId}
-                initialFollowing={false}
-                initialFollowersCount={followersCount}
-              />
+            <FollowButton
+              authorGuestId={guestId}
+              initialFollowing={false}
+              initialFollowersCount={followersCount}
+            />
+          </div>
+        </section>
+
+        <section className="mt-14">
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30">
+                Published work
+              </p>
+
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+                Posts by {authorName}
+              </h2>
             </div>
-          </div>
-        </div>
 
-        <div className="mt-10">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-3xl font-black">
-              Posts by {authorName}
-            </h2>
+            <Link
+              href="/blogs"
+              className="hidden text-sm font-bold text-white/40 transition hover:text-white sm:block"
+            >
+              Explore →
+            </Link>
           </div>
 
-          {posts.length ? (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {posts.map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
-                  className="group overflow-hidden rounded-[24px] border border-black/10 bg-white transition hover:-translate-y-1 hover:shadow-lg"
-                >
-                  <div className="aspect-[16/10] overflow-hidden bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {posts.map((post) => (
+              <Link
+                key={post.id}
+                href={`/blog/${post.slug}`}
+                className="group overflow-hidden rounded-[26px] border border-white/[0.08] bg-white/[0.025] transition duration-300 hover:-translate-y-1 hover:border-white/[0.16] hover:bg-white/[0.045]"
+              >
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#0d0d0d]">
+                  {post.cover_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={post.cover_image || "https://via.placeholder.com/800x500"}
+                      src={post.cover_image}
                       alt={post.title}
-                      className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]"
+                      className="h-full w-full object-cover opacity-90 transition duration-700 group-hover:scale-105"
                     />
-                  </div>
-
-                  <div className="p-5">
-                    <div className="mb-3 flex flex-wrap gap-2">
-                      {post.topic ? (
-                        <span className="rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-xs text-slate-600">
-                          {post.topic}
-                        </span>
-                      ) : null}
-
-                      {post.language ? (
-                        <span className="rounded-full border border-black/10 bg-slate-50 px-3 py-1 text-xs text-slate-600">
-                          {post.language}
-                        </span>
-                      ) : null}
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <span className="text-7xl font-black tracking-[-0.08em] text-white/[0.04]">
+                        BV
+                      </span>
                     </div>
+                  )}
 
-                    <h3 className="text-2xl font-black leading-tight">{post.title}</h3>
-
-                    <p className="mt-3 line-clamp-3 text-slate-600">
-                      {post.excerpt}
-                    </p>
-
-                    <p className="mt-4 text-sm text-slate-500">
-                      {formatDate(post.created_at)}
-                    </p>
+                  <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                    {post.topic ? (
+                      <span className="rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/70 backdrop-blur">
+                        {post.topic}
+                      </span>
+                    ) : null}
                   </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[24px] border border-black/10 bg-white p-8 text-slate-500">
-              No posts yet.
-            </div>
-          )}
-        </div>
+                </div>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/25">
+                    <span>{formatDate(post.created_at)}</span>
+
+                    {post.language ? (
+                      <>
+                        <span>•</span>
+                        <span>{post.language}</span>
+                      </>
+                    ) : null}
+                  </div>
+
+                  <h3 className="mt-4 line-clamp-2 text-xl font-black leading-tight tracking-[-0.025em]">
+                    {post.title}
+                  </h3>
+
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/35">
+                    {post.excerpt || "Read this idea on BlogVerse."}
+                  </p>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-white/[0.07] pt-4">
+                    <span className="text-xs font-semibold text-white/35">
+                      Read article
+                    </span>
+
+                    <span className="text-white/30 transition group-hover:translate-x-1 group-hover:text-white">
+                      →
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );
