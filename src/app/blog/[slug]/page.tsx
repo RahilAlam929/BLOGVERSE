@@ -9,7 +9,7 @@ import { CommentThread } from "@/components/comment-thread";
 import { ShareSection } from "@/components/share-section";
 import { FollowButton } from "@/components/follow-button";
 import { DeletePostButton } from "@/components/delete-post-button";
-import BlogDiscovery from "@/components/blog-discovery";
+import { BlogDiscovery } from "@/components/blog-discovery";
 import { ReadingThemeToggle } from "@/components/reading-theme-toggle";
 
 type Block =
@@ -143,7 +143,7 @@ function renderBlock(block: Block, index: number) {
         style={{ borderColor: "var(--reading-border)" }}
       >
         {block.language ? (
-          <div className="border-b px-4 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-zinc-400">
+          <div className="reading-muted border-b px-4 py-2.5 text-xs font-bold uppercase tracking-[0.16em]">
             {block.language}
           </div>
         ) : null}
@@ -155,14 +155,87 @@ function renderBlock(block: Block, index: number) {
     );
   }
 
-  return (
-    <p
-      key={index}
-      className="reading-text mt-7 whitespace-pre-wrap text-[17px] leading-[1.9] sm:text-[19px]"
-    >
-      {block.text}
-    </p>
-  );
+  const lines = block.text.split("\n");
+  const elements: React.ReactNode[] = [];
+
+  let bulletItems: string[] = [];
+  let numberedItems: string[] = [];
+
+  const flushLists = () => {
+    if (bulletItems.length > 0) {
+      elements.push(
+        <ul
+          key={`ul-${elements.length}`}
+          className="reading-list mt-7 list-disc space-y-2 pl-7 text-[17px] leading-[1.9] sm:text-[19px]"
+        >
+          {bulletItems.map((item, itemIndex) => (
+            <li
+              key={itemIndex}
+              className="reading-text pl-1 marker:text-[color:var(--reading-text)]"
+            >
+              {item}
+            </li>
+          ))}
+        </ul>,
+      );
+
+      bulletItems = [];
+    }
+
+    if (numberedItems.length > 0) {
+      elements.push(
+        <ol
+          key={`ol-${elements.length}`}
+          className="reading-list mt-7 list-decimal space-y-2 pl-7 text-[17px] leading-[1.9] sm:text-[19px]"
+        >
+          {numberedItems.map((item, itemIndex) => (
+            <li
+              key={itemIndex}
+              className="reading-text pl-1 marker:text-[color:var(--reading-text)]"
+            >
+              {item}
+            </li>
+          ))}
+        </ol>,
+      );
+
+      numberedItems = [];
+    }
+  };
+
+  lines.forEach((line, lineIndex) => {
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      flushLists();
+      return;
+    }
+
+    if (/^[-*•]\s+/.test(trimmed)) {
+      bulletItems.push(trimmed.replace(/^[-*•]\s+/, ""));
+      return;
+    }
+
+    if (/^\d+[.)]\s+/.test(trimmed)) {
+      numberedItems.push(trimmed.replace(/^\d+[.)]\s+/, ""));
+      return;
+    }
+
+    flushLists();
+
+    elements.push(
+      <p
+        key={`p-${lineIndex}`}
+        className="reading-text mt-7 whitespace-pre-wrap text-[17px] leading-[1.9] sm:text-[19px]"
+      >
+        {line}
+      </p>,
+    );
+  });
+
+  flushLists();
+
+  return <div key={index}>{elements}</div>;
 }
 
 export default async function BlogSlugPage({
@@ -358,7 +431,7 @@ export default async function BlogSlugPage({
                     <a
                       key={`${item.id}-${index}`}
                       href={`#${item.id}`}
-                      className="reading-text block rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-black/5 dark:hover:bg-white/5"
+                      className="reading-text block rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-black/5"
                     >
                       {index + 1}. {item.text}
                     </a>

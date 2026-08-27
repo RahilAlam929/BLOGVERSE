@@ -307,3 +307,31 @@ html.blogverse-reading-dark .reading-page .prose pre {
   background: #18181b !important;
   color: #f4f4f5 !important;
 }
+
+/* =========================================================
+   READING MODE LIST / BULLET COLORS
+   ========================================================= */
+
+.reading-page .reading-list {
+  color: var(--reading-text);
+}
+
+.reading-page .reading-list li {
+  color: var(--reading-text);
+}
+
+.reading-page .reading-list li::marker {
+  color: var(--reading-text);
+}
+
+html.blogverse-reading-dark .reading-page .reading-list,
+html.blogverse-reading-dark .reading-page .reading-list li,
+html.blogverse-reading-dark .reading-page .reading-list li::marker {
+  color: #f4f4f5;
+}
+
+html:not(.blogverse-reading-dark) .reading-page .reading-list,
+html:not(.blogverse-reading-dark) .reading-page .reading-list li,
+html:not(.blogverse-reading-dark) .reading-page .reading-list li::marker {
+  color: #18181b;
+}
