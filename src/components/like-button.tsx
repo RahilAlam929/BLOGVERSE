@@ -23,6 +23,7 @@ export function LikeButton({
     if (loading) return;
 
     const guestId = getGuestId();
+
     if (!guestId) {
       alert("Guest session not found");
       return;
@@ -40,10 +41,11 @@ export function LikeButton({
 
         if (error) {
           alert(error.message);
-        } else {
-          setLiked(false);
-          setCount((prev) => Math.max(prev - 1, 0));
+          return;
         }
+
+        setLiked(false);
+        setCount((value) => Math.max(0, value - 1));
       } else {
         const { error } = await supabase.from("likes").insert({
           post_id: postId,
@@ -52,10 +54,11 @@ export function LikeButton({
 
         if (error) {
           alert(error.message);
-        } else {
-          setLiked(true);
-          setCount((prev) => prev + 1);
+          return;
         }
+
+        setLiked(true);
+        setCount((value) => value + 1);
       }
     } finally {
       setLoading(false);
@@ -67,14 +70,22 @@ export function LikeButton({
       type="button"
       onClick={toggleLike}
       disabled={loading}
-      className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
+      className={`group inline-flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
         liked
-          ? "border-red-300 bg-red-50 text-red-600"
-          : "border-black/10 bg-white text-slate-700 hover:bg-slate-50"
+          ? "border-rose-500/30 bg-rose-500/10 text-rose-500"
+          : "border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10"
       }`}
     >
-      <Heart className={`h-5 w-5 ${liked ? "fill-red-500" : ""}`} />
+      <Heart
+        className={`h-[18px] w-[18px] ${
+          liked ? "fill-current" : "group-hover:scale-110"
+        }`}
+      />
+
       <span>{loading ? "..." : count}</span>
+      <span className="hidden sm:inline">
+        {liked ? "Liked" : "Like"}
+      </span>
     </button>
   );
 }
