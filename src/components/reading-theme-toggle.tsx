@@ -1,65 +1,68 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "blogverse-reading-theme";
 
 export function ReadingThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const isDark = saved === "dark";
 
-    if (saved === "dark") {
-      setTheme("dark");
-      document.documentElement.classList.add("dark");
-    }
-
+    setDark(isDark);
     setMounted(true);
+
+    if (isDark) {
+      document.documentElement.classList.add("blogverse-reading-dark");
+    } else {
+      document.documentElement.classList.remove("blogverse-reading-dark");
+    }
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
+  function toggleTheme() {
+    const nextDark = !dark;
 
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
+    setDark(nextDark);
+
+    if (nextDark) {
+      document.documentElement.classList.add("blogverse-reading-dark");
+      window.localStorage.setItem(STORAGE_KEY, "dark");
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.remove("blogverse-reading-dark");
+      window.localStorage.setItem(STORAGE_KEY, "light");
     }
-
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme, mounted]);
+  }
 
   if (!mounted) {
     return (
       <button
         type="button"
-        className="h-10 w-10 rounded-full border border-slate-200 bg-white"
-        aria-label="Reading theme"
-      />
+        className="rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm font-bold text-zinc-900"
+      >
+        🌙 Dark
+      </button>
     );
   }
-
-  const dark = theme === "dark";
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      aria-label="Toggle reading theme"
-      className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200"
+      onClick={toggleTheme}
+      aria-label={dark ? "Switch to light reading mode" : "Switch to dark reading mode"}
+      className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold shadow-sm transition hover:-translate-y-0.5"
+      style={{
+        backgroundColor: dark ? "#18181b" : "#ffffff",
+        color: dark ? "#f4f4f5" : "#18181b",
+        borderColor: dark
+          ? "rgba(255,255,255,.14)"
+          : "rgba(0,0,0,.12)",
+      }}
     >
-      {dark ? (
-        <Sun className="h-4 w-4" />
-      ) : (
-        <Moon className="h-4 w-4" />
-      )}
-
-      <span className="hidden sm:inline">
-        {dark ? "Light" : "Dark"}
-      </span>
+      <span>{dark ? "☀️" : "🌙"}</span>
+      <span>{dark ? "Light" : "Dark"}</span>
     </button>
   );
 }
