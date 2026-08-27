@@ -23,11 +23,7 @@ export const metadata: Metadata = {
     "startup blogs",
     "web development",
   ],
-  authors: [
-    {
-      name: "BlogVerse",
-    },
-  ],
+  authors: [{ name: "BlogVerse" }],
   creator: "BlogVerse",
   openGraph: {
     title: "BlogVerse — Write. Publish. Get discovered.",
@@ -55,12 +51,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-slate-50 antialiased">
+      <body className="min-h-screen bg-[#050505] text-white antialiased">
         <Navbar />
 
-        <main className="min-h-screen pt-16 sm:pt-[72px]">
+        <div className="min-h-screen pt-[72px]">
           {children}
-        </main>
+        </div>
 
         <Footer />
 

@@ -2,23 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* FULL PAGE BACKGROUND CONTROL */
-html,
+html {
+  min-height: 100%;
+  background: #050505;
+  scroll-behavior: smooth;
+}
+
 body {
-  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(124, 58, 237, 0.07), transparent 28%),
+    radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.06), transparent 25%),
+    #050505;
+  color: white;
 }
 
-/* LIGHT MODE (default) */
-body {
-  @apply bg-[#f3f3f5] text-[#1f1f26];
+* {
+  box-sizing: border-box;
 }
 
-/* DARK MODE (FULL PAGE) */
-html.dark body {
-  @apply bg-[#09090f] text-white;
-}
-
-/* selection */
 ::selection {
-  background: rgba(109, 94, 252, 0.3);
+  background: rgba(139, 92, 246, 0.45);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }
