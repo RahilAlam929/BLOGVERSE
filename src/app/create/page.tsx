@@ -89,48 +89,69 @@ export default function CreatePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
     if (loading) return;
 
     const supabase = createClient();
 
-    setLoading(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      alert("Please login before publishing an article.");
-      setLoading(false);
-      router.push("/login");
-      return;
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("name, username")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const guestId = user.id;
-
-    const guestName =
-      profile?.name ||
-      profile?.username ||
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
-      "Anonymous";
-
     try {
+      setLoading(true);
+
+      console.log("1. Checking logged-in user...");
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      console.log("2. Auth result:", user, authError);
+
+      if (authError) {
+        throw new Error(`Auth error: ${authError.message}`);
+      }
+
+      if (!user) {
+        alert("Please login before publishing an article.");
+        router.push("/login");
+        return;
+      }
+
+      console.log("3. User ID:", user.id);
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("name, username")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      console.log("4. Profile result:", profile, profileError);
+
+      const guestId = user.id;
+
+      const guestName =
+        profile?.name ||
+        profile?.username ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "Anonymous";
+
       let coverImage = "";
+
       if (coverFile) {
+        console.log("5. Uploading cover image...");
         coverImage = await uploadFile(coverFile, "post-images");
       }
 
       const cleanBlocks = blocks.filter((block) => {
-        if (block.type === "image") return (block.url || "").trim() !== "";
-        if (block.type === "code") return (block.code || "").trim() !== "";
+        if (block.type === "image") {
+          return (block.url || "").trim() !== "";
+        }
+
+        if (block.type === "code") {
+          return (block.code || "").trim() !== "";
+        }
+
         return ("text" in block ? block.text : "").trim() !== "";
       });
 
@@ -142,37 +163,52 @@ export default function CreatePage() {
             if ("code" in block) return block.code;
             return "";
           })
-          .join("\n\n") || form.content || form.excerpt;
+          .join("\n\n") ||
+        form.content ||
+        form.excerpt;
 
       const nextSlug = `${slugify(form.title)}-${Date.now()}`;
 
-      const { error } = await supabase.from("posts").insert({
-        title: form.title,
-        slug: nextSlug,
-        excerpt: form.excerpt,
-        content: fallbackContent,
-        content_blocks: cleanBlocks,
-        cover_image: coverImage,
-        category: form.category,
-        topic: form.topic,
-        language: form.language,
-        guest_id: guestId,
-        guest_name: guestName,
-      });
+      console.log("6. Inserting post...");
 
-      if (error) {
-        alert(error.message);
-        setLoading(false);
-        return;
+      const { data: insertedPost, error: postError } = await supabase
+        .from("posts")
+        .insert({
+          title: form.title,
+          slug: nextSlug,
+          excerpt: form.excerpt,
+          content: fallbackContent,
+          content_blocks: cleanBlocks,
+          cover_image: coverImage,
+          category: form.category,
+          topic: form.topic,
+          language: form.language,
+          guest_id: guestId,
+          guest_name: guestName,
+        })
+        .select("id, slug")
+        .single();
+
+      console.log("7. Post result:", insertedPost, postError);
+
+      if (postError) {
+        throw new Error(`Post publish error: ${postError.message}`);
       }
 
-      alert("Post published successfully");
-      setLoading(false);
+      alert("Post published successfully!");
+
       router.push(`/blog/${nextSlug}`);
       router.refresh();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to create post";
+    } catch (error) {
+      console.error("PUBLISH ERROR:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to publish article.";
+
       alert(message);
+    } finally {
       setLoading(false);
     }
   }
