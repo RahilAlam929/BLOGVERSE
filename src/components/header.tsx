@@ -27,44 +27,34 @@ export function Header() {
     const supabase = createClient();
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    const loadAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!mounted) return;
 
-      const authUser = data.session?.user ?? null;
-      setUser(authUser);
+      setUser(session?.user ?? null);
 
-      if (authUser) {
-        supabase
+      if (session?.user) {
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("name, username, avatar_url")
-          .eq("id", authUser.id)
-          .maybeSingle()
-          .then(({ data: profileData }) => {
-            if (mounted) {
-              setProfile(profileData);
-            }
-          });
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (mounted) {
+          setProfile(profileData);
+        }
       } else {
         setProfile(null);
       }
-    });
+    };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        const authUser = session?.user ?? null;
-        setUser(authUser);
-
-        if (!authUser) {
-          setProfile(null);
-        }
-      }
-    });
+    loadAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
