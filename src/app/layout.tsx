@@ -58,7 +58,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-slate-50 antialiased">
         <Navbar />
 
-        <main className="min-h-[calc(100vh-72px)]">
+        <main className="min-h-screen pt-16 sm:pt-[72px]">
           {children}
         </main>
 

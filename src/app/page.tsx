@@ -74,7 +74,7 @@ export default async function HomePage() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("BlogVerse homepage error:", error);
+    console.error("BlogVerse homepage error:", JSON.stringify(error, null, 2));
   }
 
   const posts = (rawPosts ?? []) as Post[];
@@ -96,18 +96,18 @@ export default async function HomePage() {
   const latestPosts = posts.slice(1, 7);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] text-white selection:bg-white selection:text-black">
+    <main className="min-h-screen overflow-x-hidden bg-[#f6f7fb] text-slate-950 selection:bg-slate-950 selection:text-white">
       {/* HERO */}
 
       <section className="relative overflow-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-72 -top-72 h-[650px] w-[650px] rounded-full bg-violet-600/[0.07] blur-[150px]"
+          className="pointer-events-none absolute -right-72 -top-72 h-[650px] w-[650px] rounded-full bg-violet-500/[0.10] blur-[150px]"
         />
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-80 -left-72 h-[600px] w-[600px] rounded-full bg-blue-600/[0.05] blur-[150px]"
+          className="pointer-events-none absolute -bottom-80 -left-72 h-[600px] w-[600px] rounded-full bg-blue-500/[0.08] blur-[150px]"
         />
 
         <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-20 sm:px-8 sm:pb-24 sm:pt-28 lg:px-10 lg:pb-28 lg:pt-36">
