@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import Navbar from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { CookieConsent } from "@/components/cookie-consent";
 
@@ -28,7 +29,6 @@ export const metadata: Metadata = {
     },
   ],
   creator: "BlogVerse",
-  metadataBase: new URL("https://blogverse.example.com"),
   openGraph: {
     title: "BlogVerse — Write. Publish. Get discovered.",
     description:
@@ -56,7 +56,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-slate-50 antialiased">
-        {children}
+        <Navbar />
+
+        <main className="min-h-[calc(100vh-72px)]">
+          {children}
+        </main>
 
         <Footer />
 
