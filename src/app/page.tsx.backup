@@ -1,478 +1,429 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { FeaturedPost } from "@/components/featured-post";
-import { PostGrid } from "@/components/post-grid";
-import { Header } from "@/components/header";
 
-type RawPost = {
+type Post = {
   id: number;
   slug: string;
   title: string;
   excerpt?: string | null;
   cover_image?: string | null;
+  category?: string | null;
   topic?: string | null;
   language?: string | null;
-  category?: string | null;
   guest_name?: string | null;
   guest_id?: string | null;
   created_at?: string | null;
   likes?: { id: number }[] | null;
-  comments?: { id: number }[] | null;
 };
+
+function formatDate(date?: string | null) {
+  if (!date) return "Recently";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date));
+}
+
+function truncate(text?: string | null, length = 150) {
+  if (!text) return "Discover a new perspective from the BlogVerse community.";
+  return text.length > length ? `${text.slice(0, length)}...` : text;
+}
 
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data: rawPosts } = await supabase
     .from("posts")
     .select(`
-      *,
-      likes(id),
-      comments(id)
+      id,
+      slug,
+      title,
+      excerpt,
+      cover_image,
+      category,
+      topic,
+      language,
+      guest_name,
+      guest_id,
+      created_at,
+      likes(id)
     `)
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Failed to load posts:", error);
-  }
+  const posts = (rawPosts ?? []) as Post[];
 
-  const posts = (data ?? []) as RawPost[];
+  const publishedBlogs = posts.length;
 
-  const normalized = posts.map((post) => ({
-    ...post,
-    profiles: {
-      name: post.guest_name || "BlogVerse Author",
-      avatar_url: null,
-    },
-    likes_count: post.likes?.length ?? 0,
-    comments_count: post.comments?.length ?? 0,
-  }));
-
-  const featured = normalized[0];
-  const latest = normalized.slice(1);
-
-  const categories = [
-    "Technology",
-    "Programming",
-    "AI",
-    "Web Development",
-    "Design",
-    "Startups",
-    "Productivity",
-  ];
+  const writers = new Set(
+    posts
+      .map((post) => post.guest_id)
+      .filter(Boolean)
+  ).size;
 
   const totalLikes = posts.reduce(
     (total, post) => total + (post.likes?.length ?? 0),
     0
   );
 
-  const totalComments = posts.reduce(
-    (total, post) => total + (post.comments?.length ?? 0),
-    0
-  );
-
-  const totalAuthors = new Set(
-    posts.map((post) => post.guest_id).filter(Boolean)
-  ).size;
+  const featured = posts[0];
+  const latestPosts = posts.slice(1, 7);
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-slate-950">
-      <Header />
-
+    <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
       {/* HERO */}
-      <section className="relative overflow-hidden border-b border-slate-800 bg-[#06101d]">
-        <div className="absolute inset-0">
-          <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="absolute right-[-180px] top-20 h-[520px] w-[520px] rounded-full bg-indigo-500/10 blur-3xl" />
+      <section className="relative isolate">
+        {/* Background grid */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.16]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px)",
+            backgroundSize: "46px 46px",
+          }}
+        />
 
-          <div className="absolute inset-0 opacity-[0.035] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:48px_48px]" />
-        </div>
+        {/* Glow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-[-180px] top-[-180px] -z-10 h-[620px] w-[620px] rounded-full bg-violet-600/20 blur-[140px]"
+        />
 
-        <div className="relative mx-auto max-w-7xl px-5 py-16 sm:py-20 lg:px-8 lg:py-24">
-          <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">
-            {/* HERO COPY */}
-            <div>
-              <div className="mb-7 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2">
-                <span className="h-2 w-2 rounded-full bg-blue-400 shadow-[0_0_18px_rgba(96,165,250,.9)]" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[-220px] left-[-180px] -z-10 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[130px]"
+        />
 
-                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-300">
-                  The modern blogging platform
-                </span>
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-20 sm:px-8 sm:pb-20 sm:pt-28 lg:px-10 lg:pb-24">
+          <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-10">
+            {/* LEFT */}
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/65 backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                The modern blogging platform
               </div>
 
-              <h1 className="max-w-4xl text-5xl font-black leading-[0.92] tracking-[-0.06em] text-white sm:text-6xl lg:text-8xl">
+              <h1 className="mt-7 text-[clamp(3.7rem,8vw,7.8rem)] font-black leading-[0.82] tracking-[-0.07em]">
                 Write.
-                <span className="block text-slate-500">
-                  Publish.
-                </span>
-                <span className="block">
-                  Get discovered.
-                </span>
+                <br />
+                <span className="text-white/30">Publish.</span>
+                <br />
+                Get discovered.
               </h1>
 
-              <p className="mt-8 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-                BlogVerse is a modern place to write and discover blogs about
-                technology, programming, AI, design, startups and everything
-                worth learning.
+              <p className="mt-8 max-w-2xl text-base leading-7 text-white/55 sm:text-lg sm:leading-8">
+                BlogVerse is a place to write and discover ideas about
+                technology, programming, AI, design, startups, productivity
+                and everything worth learning.
               </p>
 
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-9 flex flex-wrap gap-3">
                 <Link
                   href="/blogs"
-                  className="rounded-2xl bg-white px-7 py-4 text-center text-sm font-black text-slate-950 transition duration-300 hover:-translate-y-1 hover:bg-slate-100"
+                  className="group inline-flex items-center gap-3 rounded-2xl bg-white px-6 py-3.5 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90"
                 >
-                  Explore blogs →
+                  Explore blogs
+                  <span className="transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
                 </Link>
 
                 <Link
                   href="/create"
-                  className="rounded-2xl border border-white/15 bg-white/[0.05] px-7 py-4 text-center text-sm font-bold text-white transition duration-300 hover:-translate-y-1 hover:bg-white/10"
+                  className="inline-flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] px-6 py-3.5 text-sm font-bold text-white transition hover:border-white/30 hover:bg-white/[0.08]"
                 >
                   Start writing
+                  <span className="text-white/50">↗</span>
                 </Link>
               </div>
 
-              {/* STATS */}
-              <div className="mt-14 grid max-w-2xl grid-cols-3 border-t border-white/10 pt-7">
-                <div>
-                  <p className="text-2xl font-black text-white sm:text-3xl">
-                    {posts.length}+
+              {/* REAL STATS */}
+              <div className="mt-14 grid max-w-2xl grid-cols-3 gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <p className="text-2xl font-black sm:text-3xl">
+                    {publishedBlogs}
                   </p>
-
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                     Published blogs
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-2xl font-black text-white sm:text-3xl">
-                    {totalAuthors}+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <p className="text-2xl font-black sm:text-3xl">
+                    {writers}
                   </p>
-
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                     Writers
                   </p>
                 </div>
 
-                <div>
-                  <p className="text-2xl font-black text-white sm:text-3xl">
-                    {totalLikes}+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+                  <p className="text-2xl font-black sm:text-3xl">
+                    {totalLikes}
                   </p>
-
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/35">
                     Likes
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* HERO FEATURE CARD */}
-            {featured && (
-              <div className="relative lg:pl-6">
-                <div className="absolute -inset-4 rounded-[38px] bg-blue-500/10 blur-3xl" />
+            {/* RIGHT VISUAL */}
+            <div className="relative mx-auto hidden h-[520px] w-full max-w-[560px] lg:block">
+              <div className="absolute left-1/2 top-1/2 h-[330px] w-[330px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/[0.08] to-transparent shadow-[0_0_120px_rgba(255,255,255,0.06)]" />
 
-                <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.06] p-3 shadow-2xl backdrop-blur-xl">
-                  <div className="overflow-hidden rounded-[24px] bg-white">
-                    {featured.cover_image ? (
-                      <div
-                        className="h-56 bg-cover bg-center sm:h-64"
-                        style={{
-                          backgroundImage: `url(${featured.cover_image})`,
-                        }}
+              <div className="absolute left-1/2 top-1/2 h-[230px] w-[230px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0b0b0b] shadow-[inset_0_0_70px_rgba(255,255,255,0.04),0_0_100px_rgba(139,92,246,0.12)]" />
+
+              <div className="absolute left-1/2 top-1/2 h-[440px] w-[170px] -translate-x-1/2 -translate-y-1/2 rotate-[55deg] rounded-[50%] border border-white/10" />
+
+              <div className="absolute left-1/2 top-1/2 h-[440px] w-[170px] -translate-x-1/2 -translate-y-1/2 -rotate-[55deg] rounded-[50%] border border-white/10" />
+
+              <div className="absolute left-[14%] top-[18%] flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-xl shadow-2xl backdrop-blur">
+                ✦
+              </div>
+
+              <div className="absolute right-[12%] top-[24%] flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-xl shadow-2xl backdrop-blur">
+                ↗
+              </div>
+
+              <div className="absolute bottom-[17%] left-[19%] flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] font-mono text-sm shadow-2xl backdrop-blur">
+                &lt;/&gt;
+              </div>
+
+              <div className="absolute bottom-[13%] right-[18%] flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-xl shadow-2xl backdrop-blur">
+                ●
+              </div>
+
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                <p className="text-5xl font-black tracking-[-0.06em]">
+                  BV
+                </p>
+                <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.3em] text-white/35">
+                  Ideas in motion
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED */}
+      {featured ? (
+        <section className="bg-[#080808] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-8 flex items-end justify-between gap-5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/35">
+                  Featured
+                </p>
+                <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                  Latest idea worth reading.
+                </h2>
+              </div>
+
+              <Link
+                href="/blogs"
+                className="hidden text-sm font-bold text-white/50 transition hover:text-white sm:block"
+              >
+                View all →
+              </Link>
+            </div>
+
+            <Link
+              href={`/blog/${featured.slug}`}
+              className="group grid overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.035] transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.055] lg:grid-cols-[1.05fr_.95fr]"
+            >
+              <div className="relative min-h-[330px] overflow-hidden bg-[#0d0d0d] lg:min-h-[430px]">
+                {featured.cover_image ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={featured.cover_image}
+                      alt={featured.title}
+                      className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[130px] font-black tracking-[-0.08em] text-white/[0.035]">
+                      BV
+                    </span>
+                  </div>
+                )}
+
+                <div className="absolute bottom-5 left-5">
+                  <span className="rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white/75 backdrop-blur">
+                    {featured.topic || featured.category || "Article"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-center p-7 sm:p-10">
+                <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-white/35">
+                  {featured.language ? (
+                    <span>{featured.language}</span>
+                  ) : null}
+                  <span>•</span>
+                  <span>{formatDate(featured.created_at)}</span>
+                </div>
+
+                <h3 className="mt-5 text-3xl font-black leading-tight tracking-[-0.04em] sm:text-4xl">
+                  {featured.title}
+                </h3>
+
+                <p className="mt-5 text-sm leading-7 text-white/45 sm:text-base">
+                  {truncate(featured.excerpt, 190)}
+                </p>
+
+                <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-5">
+                  <span className="text-sm font-semibold text-white/55">
+                    {featured.guest_name || "Anonymous"}
+                  </span>
+
+                  <span className="text-xl transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <section className="bg-[#080808] px-5 py-20 sm:px-8 lg:px-10">
+          <div className="mx-auto max-w-7xl rounded-[30px] border border-white/10 bg-white/[0.03] p-10 text-center">
+            <p className="text-sm text-white/40">
+              No published blogs yet.
+            </p>
+            <Link
+              href="/create"
+              className="mt-5 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-black text-black"
+            >
+              Publish the first article
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* LATEST */}
+      {latestPosts.length > 0 ? (
+        <section className="bg-[#050505] px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-9">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30">
+                Discover
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                More from BlogVerse
+              </h2>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {latestPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/blog/${post.slug}`}
+                  className="group overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.025] transition duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.045]"
+                >
+                  <div className="relative aspect-[16/9] overflow-hidden bg-[#0d0d0d]">
+                    {post.cover_image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.cover_image}
+                        alt={post.title}
+                        className="h-full w-full object-cover opacity-85 transition duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-56 items-end bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950 p-7 sm:h-64">
-                        <span className="text-7xl font-black tracking-[-0.08em] text-white/10">
+                      <div className="flex h-full items-center justify-center">
+                        <span className="text-6xl font-black text-white/[0.04]">
                           BV
                         </span>
                       </div>
                     )}
 
-                    <div className="p-7">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-blue-600">
-                          Featured
-                        </span>
-
-                        {featured.category && (
-                          <span className="text-xs font-bold text-slate-400">
-                            {featured.category}
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="mt-4 line-clamp-2 text-2xl font-black leading-tight tracking-[-0.03em] text-slate-950 sm:text-3xl">
-                        {featured.title}
-                      </h2>
-
-                      {featured.excerpt && (
-                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
-                          {featured.excerpt}
-                        </p>
-                      )}
-
-                      <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">
-                            {featured.guest_name || "BlogVerse Author"}
-                          </p>
-
-                          <p className="mt-1 text-[11px] text-slate-400">
-                            {featured.likes_count} likes ·{" "}
-                            {featured.comments_count} comments
-                          </p>
-                        </div>
-
-                        <Link
-                          href={`/blog/${featured.slug}`}
-                          className="rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-black text-white transition hover:bg-blue-600"
-                        >
-                          Read →
-                        </Link>
-                      </div>
+                    <div className="absolute left-4 top-4">
+                      <span className="rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.15em] text-white/65 backdrop-blur">
+                        {post.topic || post.category || "Article"}
+                      </span>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
 
-      {/* CATEGORY BAR */}
-      <section className="sticky top-[78px] z-30 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-5 py-4 lg:px-8">
-          <span className="mr-2 flex shrink-0 items-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
-            Explore
-          </span>
+                  <div className="p-6">
+                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/30">
+                      <span>{formatDate(post.created_at)}</span>
+                      <span>•</span>
+                      <span>{post.likes?.length ?? 0} likes</span>
+                    </div>
 
-          {categories.map((category) => (
-            <Link
-              key={category}
-              href="/blogs"
-              className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 transition duration-200 hover:border-slate-950 hover:bg-slate-950 hover:text-white"
-            >
-              {category}
-            </Link>
-          ))}
-        </div>
-      </section>
+                    <h3 className="mt-4 line-clamp-2 text-xl font-black leading-tight tracking-[-0.025em]">
+                      {post.title}
+                    </h3>
 
-      {/* MAIN CONTENT */}
-      <div className="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
-        {/* FEATURED BLOG */}
-        {featured && (
-          <section>
-            <div className="mb-8 flex items-end justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
-                  Editor&apos;s pick
-                </p>
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/40">
+                      {truncate(post.excerpt)}
+                    </p>
 
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                  Featured blog
-                </h2>
-              </div>
+                    <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
+                      <span className="text-xs font-semibold text-white/45">
+                        {post.guest_name || "Anonymous"}
+                      </span>
 
+                      <span className="text-white/35 transition group-hover:translate-x-1 group-hover:text-white">
+                        →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-10 text-center">
               <Link
-                href={`/blog/${featured.slug}`}
-                className="hidden text-sm font-bold text-slate-500 transition hover:text-slate-950 sm:block"
+                href="/blogs"
+                className="inline-flex rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-3 text-sm font-bold text-white/70 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
               >
-                Read article →
+                Explore all blogs →
               </Link>
             </div>
+          </div>
+        </section>
+      ) : null}
 
-            <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:shadow-2xl">
-              <FeaturedPost post={featured} />
-            </div>
-          </section>
-        )}
+      {/* FINAL CTA */}
+      <section className="bg-[#080808] px-5 py-20 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.035] px-6 py-16 text-center sm:px-10">
+            <div
+              aria-hidden="true"
+              className="absolute left-1/2 top-0 h-40 w-80 -translate-x-1/2 rounded-full bg-white/[0.06] blur-[90px]"
+            />
 
-        {/* LATEST BLOGS */}
-        <section
-          id="latest"
-          className="mt-24 scroll-mt-32"
-        >
-          <div className="mb-9 flex items-end justify-between">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
-                Recently published
+            <div className="relative">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30">
+                Your idea belongs here
               </p>
 
-              <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-                Latest blogs
+              <h2 className="mx-auto mt-4 max-w-3xl text-4xl font-black tracking-[-0.05em] sm:text-6xl">
+                Have something worth sharing?
               </h2>
 
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                Fresh articles from the BlogVerse community.
-              </p>
-            </div>
-
-            <Link
-              href="/blogs"
-              className="hidden rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:text-slate-950 sm:block"
-            >
-              View all →
-            </Link>
-          </div>
-
-          {latest.length > 0 ? (
-            <PostGrid posts={latest} />
-          ) : (
-            <div className="rounded-[30px] border border-dashed border-slate-300 bg-white px-6 py-20 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-xl font-black text-white shadow-xl">
-                BV
-              </div>
-
-              <h3 className="mt-6 text-2xl font-black tracking-[-0.03em]">
-                Be the first to publish.
-              </h3>
-
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-                Share your knowledge, experience or ideas with the BlogVerse
-                community.
+              <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-white/40 sm:text-base">
+                Turn your knowledge, experience and ideas into an article
+                that people can discover.
               </p>
 
               <Link
                 href="/create"
-                className="mt-7 inline-flex rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-blue-600"
+                className="mt-8 inline-flex rounded-2xl bg-white px-7 py-3.5 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90"
               >
-                Write a blog →
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {/* WHY BLOGVERSE */}
-        <section className="mt-24">
-          <div className="mb-9">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">
-              Why BlogVerse
-            </p>
-
-            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
-              Built for people who love ideas.
-            </h2>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            <div className="group rounded-3xl border border-slate-200 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
-                01
-              </div>
-
-              <h3 className="mt-6 text-xl font-black">
-                Write freely
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                A clean writing experience designed to keep your attention on
-                the ideas that matter.
-              </p>
-            </div>
-
-            <div className="group rounded-3xl border border-slate-200 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
-                02
-              </div>
-
-              <h3 className="mt-6 text-xl font-black">
-                Get discovered
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Publish your work and help readers discover it through topics,
-                categories and the community.
-              </p>
-            </div>
-
-            <div className="group rounded-3xl border border-slate-200 bg-white p-7 transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white">
-                03
-              </div>
-
-              <h3 className="mt-6 text-xl font-black">
-                Keep learning
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Discover useful perspectives from developers, creators,
-                founders and builders across the community.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* COMMUNITY STATS */}
-        <section className="mt-24 rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
-          <div className="grid gap-8 sm:grid-cols-3">
-            <div>
-              <p className="text-3xl font-black tracking-[-0.04em]">
-                {posts.length}+
-              </p>
-
-              <p className="mt-2 text-sm font-semibold text-slate-500">
-                Articles published
-              </p>
-            </div>
-
-            <div>
-              <p className="text-3xl font-black tracking-[-0.04em]">
-                {totalComments}+
-              </p>
-
-              <p className="mt-2 text-sm font-semibold text-slate-500">
-                Community comments
-              </p>
-            </div>
-
-            <div>
-              <p className="text-3xl font-black tracking-[-0.04em]">
-                {totalLikes}+
-              </p>
-
-              <p className="mt-2 text-sm font-semibold text-slate-500">
-                Likes shared
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* FINAL CTA */}
-        <section className="mt-24 overflow-hidden rounded-[32px] bg-slate-950">
-          <div className="relative px-6 py-14 sm:px-10 lg:px-14 lg:py-16">
-            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
-            <div className="absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
-
-            <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-400">
-                  Start publishing
-                </p>
-
-                <h2 className="mt-3 max-w-2xl text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">
-                  Your next blog could be someone&apos;s next idea.
-                </h2>
-
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-                  Create an account, write something useful and publish it on
-                  BlogVerse.
-                </p>
-              </div>
-
-              <Link
-                href="/create"
-                className="shrink-0 rounded-2xl bg-white px-7 py-4 text-center text-sm font-black text-slate-950 transition duration-300 hover:-translate-y-1 hover:bg-slate-100"
-              >
-                Write a blog →
+                Start writing →
               </Link>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
-
-
-           
