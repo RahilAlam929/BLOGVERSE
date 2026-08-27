@@ -17,14 +17,35 @@ import { createClient } from "@/lib/supabase/client";
 export function Header() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<{
+    name?: string | null;
+    username?: string | null;
+    avatar_url?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     let mounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setUser(data.session?.user ?? null);
+      if (!mounted) return;
+
+      const authUser = data.session?.user ?? null;
+      setUser(authUser);
+
+      if (authUser) {
+        supabase
+          .from("profiles")
+          .select("name, username, avatar_url")
+          .eq("id", authUser.id)
+          .maybeSingle()
+          .then(({ data: profileData }) => {
+            if (mounted) {
+              setProfile(profileData);
+            }
+          });
+      } else {
+        setProfile(null);
       }
     });
 
@@ -32,7 +53,12 @@ export function Header() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
-        setUser(session?.user ?? null);
+        const authUser = session?.user ?? null;
+        setUser(authUser);
+
+        if (!authUser) {
+          setProfile(null);
+        }
       }
     });
 
