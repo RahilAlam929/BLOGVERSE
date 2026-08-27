@@ -1,16 +1,23 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+let supabaseClient: ReturnType<typeof createBrowserClient> | undefined;
+
 export function createClient() {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    if (typeof window === "undefined") {
-      throw new Error("Missing Supabase ENV variables in client.");
-    }
-
     throw new Error("Supabase is not configured.");
   }
 
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  supabaseClient = createBrowserClient(
+    supabaseUrl,
+    supabaseKey
+  );
+
+  return supabaseClient;
 }

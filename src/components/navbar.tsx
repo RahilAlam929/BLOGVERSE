@@ -29,56 +29,39 @@ export default function Navbar() {
 
   useEffect(() => {
     const supabase = createClient();
+    let mounted = true;
 
     const loadUser = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
+      if (!mounted) return;
+
       const authUser = session?.user ?? null;
+      setUser(authUser);
 
       if (!authUser) {
-        setUser(null);
         setProfile(null);
         return;
       }
 
-      setUser(authUser as User);
-
-      const { data } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("name, username, avatar_url")
         .eq("id", authUser.id)
         .maybeSingle();
 
-      setProfile(data);
+      if (mounted) {
+        setProfile(profileData);
+      }
     };
 
     loadUser();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const authUser = session?.user;
-
-      if (!authUser) {
-        setUser(null);
-        setProfile(null);
-        return;
-      }
-
-      setUser(authUser as User);
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("name, username, avatar_url")
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      setProfile(data);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const closeMenu = () => {
