@@ -24,9 +24,9 @@ export function ShareSection() {
       await navigator.clipboard.writeText(url);
       setCopied(true);
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         setCopied(false);
-      }, 2000);
+      }, 1800);
     } catch {
       alert("Could not copy link");
     }
@@ -36,77 +36,117 @@ export function ShareSection() {
     if (!url) return;
 
     if (navigator.share) {
-      await navigator.share({
-        title: document.title,
-        url,
-      });
-    } else {
-      await copyLink();
+      try {
+        await navigator.share({
+          title: document.title,
+          url,
+        });
+      } catch {
+        // User cancelled sharing.
+      }
+      return;
     }
+
+    await copyLink();
   }
 
+  const encodedUrl = encodeURIComponent(url);
+
   return (
-    <section className="mt-12 border-y border-slate-200 py-6 dark:border-white/10">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-white/[0.06] dark:text-slate-200">
-            <Share2 className="h-4 w-4" />
+    <section className="mt-14">
+      <div
+        className="reading-surface reading-border overflow-hidden rounded-2xl border"
+      >
+        <div className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-start gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+              style={{
+                borderColor: "var(--reading-border)",
+                backgroundColor: "var(--reading-bg)",
+              }}
+            >
+              <Share2
+                className="h-[18px] w-[18px]"
+                style={{ color: "var(--reading-accent)" }}
+              />
+            </div>
+
+            <div>
+              <p className="reading-text text-sm font-bold">
+                Share this article
+              </p>
+
+              <p className="reading-muted mt-1 text-xs">
+                Help others discover this article.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <p className="text-sm font-bold text-slate-900 dark:text-white">
-              Share this article
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`https://twitter.com/intent/tweet?url=${encodedUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Share on X"
+              className="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
+              style={{
+                backgroundColor: "var(--reading-bg)",
+                borderColor: "var(--reading-border)",
+                color: "var(--reading-text)",
+              }}
+            >
+              <Twitter className="h-4 w-4" />
+              <span className="hidden sm:inline">X</span>
+            </a>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Help someone discover this idea.
-            </p>
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Share on LinkedIn"
+              className="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
+              style={{
+                backgroundColor: "var(--reading-bg)",
+                borderColor: "var(--reading-border)",
+                color: "var(--reading-text)",
+              }}
+            >
+              <Linkedin className="h-4 w-4" />
+              <span className="hidden sm:inline">LinkedIn</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
+              style={{
+                backgroundColor: "var(--reading-bg)",
+                borderColor: "var(--reading-border)",
+                color: "var(--reading-text)",
+              }}
+            >
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+
+              <span>{copied ? "Copied" : "Copy link"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={nativeShare}
+              className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5"
+              style={{
+                backgroundColor: "var(--reading-accent)",
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+              <span>Share</span>
+            </button>
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08]"
-          >
-            <Twitter className="h-4 w-4" />
-            X
-          </a>
-
-          <a
-            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08]"
-          >
-            <Linkedin className="h-4 w-4" />
-            LinkedIn
-          </a>
-
-          <button
-            type="button"
-            onClick={copyLink}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 dark:hover:bg-white/[0.08]"
-          >
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-
-            {copied ? "Copied" : "Copy"}
-          </button>
-
-          <button
-            type="button"
-            onClick={nativeShare}
-            className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-          >
-            <Share2 className="h-4 w-4" />
-            Share
-          </button>
         </div>
       </div>
     </section>

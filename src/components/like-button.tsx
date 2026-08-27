@@ -45,7 +45,7 @@ export function LikeButton({
         }
 
         setLiked(false);
-        setCount((value) => Math.max(0, value - 1));
+        setCount((value) => Math.max(value - 1, 0));
       } else {
         const { error } = await supabase.from("likes").insert({
           post_id: postId,
@@ -70,21 +70,31 @@ export function LikeButton({
       type="button"
       onClick={toggleLike}
       disabled={loading}
-      className={`group inline-flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
-        liked
-          ? "border-rose-500/30 bg-rose-500/10 text-rose-500"
-          : "border-slate-200 bg-white text-slate-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-rose-500/30 dark:hover:bg-rose-500/10"
-      }`}
+      aria-label={liked ? "Unlike article" : "Like article"}
+      className="group inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+      style={{
+        backgroundColor: liked
+          ? "color-mix(in srgb, #ef4444 10%, var(--reading-surface))"
+          : "var(--reading-surface)",
+        borderColor: liked
+          ? "color-mix(in srgb, #ef4444 35%, var(--reading-border))"
+          : "var(--reading-border)",
+        color: liked ? "#ef4444" : "var(--reading-text)",
+      }}
     >
       <Heart
-        className={`h-[18px] w-[18px] ${
+        className={`h-[18px] w-[18px] transition ${
           liked ? "fill-current" : "group-hover:scale-110"
         }`}
       />
 
-      <span>{loading ? "..." : count}</span>
-      <span className="hidden sm:inline">
-        {liked ? "Liked" : "Like"}
+      <span>{loading ? "..." : liked ? "Liked" : "Like"}</span>
+
+      <span
+        className="border-l pl-2 text-xs"
+        style={{ borderColor: "var(--reading-border)" }}
+      >
+        {count}
       </span>
     </button>
   );
