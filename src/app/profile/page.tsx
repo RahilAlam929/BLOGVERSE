@@ -82,6 +82,8 @@ export default function ProfilePage() {
 
     const authUser = session?.user ?? null;
 
+    console.log("PROFILE AUTH:", authUser?.id || "NO USER");
+
     if (!authUser) {
       setLoading(false);
       return;
@@ -94,6 +96,9 @@ export default function ProfilePage() {
       .select("id, name, username, avatar_url")
       .eq("id", authUser.id)
       .maybeSingle();
+
+    console.log("PROFILE DATA:", profileData);
+    console.log("PROFILE ERROR:", profileError);
 
     if (profileError) {
       setError(profileError.message);
@@ -122,6 +127,9 @@ export default function ProfilePage() {
       .eq("guest_id", authUser.id)
       .order("created_at", { ascending: false });
 
+    console.log("POSTS DATA:", postData);
+    console.log("POSTS ERROR:", postsError);
+
     if (postsError) {
       setError(postsError.message);
     }
@@ -143,6 +151,9 @@ export default function ProfilePage() {
         head: true,
       })
       .eq("guest_id", authUser.id);
+
+    console.log("FOLLOWERS:", followerCount);
+    console.log("FOLLOWING:", followingCount);
 
     setFollowers(followerCount ?? 0);
     setFollowing(followingCount ?? 0);
