@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import Navbar from "@/components/navbar";
+import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { CookieConsent } from "@/components/cookie-consent";
 
@@ -52,9 +52,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-[#050505] text-white antialiased">
-        <Navbar />
+        <Header />
 
-        <div className="min-h-screen pt-[72px]">
+        <div className="min-h-screen pt-[64px]">
           {children}
         </div>
 
