@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getGuestId, getGuestName } from "@/lib/guest";
 
 export function FollowButton({
   authorGuestId,
@@ -14,45 +13,75 @@ export function FollowButton({
   initialFollowersCount: number;
 }) {
   const supabase = createClient();
+
   const [following, setFollowing] = useState(initialFollowing);
   const [count, setCount] = useState(initialFollowersCount);
   const [loading, setLoading] = useState(false);
 
   async function toggleFollow() {
-    const guestId = getGuestId();
-    const guestName = getGuestName().trim() || "Anonymous";
-
-    if (!guestId) return;
-    if (guestId === authorGuestId) {
-      alert("You cannot follow yourself");
-      return;
-    }
     if (loading) return;
 
     setLoading(true);
 
-    if (following) {
-      const { error } = await supabase
-        .from("follows")
-        .delete()
-        .eq("guest_id", guestId)
-        .eq("following_id", authorGuestId);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!error) {
+      const user = session?.user ?? null;
+
+      if (!user) {
+        alert("Please login to follow users.");
+        setLoading(false);
+        return;
+      }
+
+      if (user.id === authorGuestId) {
+        alert("You cannot follow yourself.");
+        setLoading(false);
+        return;
+      }
+
+      if (following) {
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("guest_id", user.id)
+          .eq("following_id", authorGuestId);
+
+        if (error) {
+          alert(error.message);
+          setLoading(false);
+          return;
+        }
+
         setFollowing(false);
         setCount((prev) => Math.max(prev - 1, 0));
-      }
-    } else {
-      const { error } = await supabase.from("follows").insert({
-        guest_id: guestId,
-        guest_name: guestName,
-        following_id: authorGuestId,
-      });
+      } else {
+        const guestName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split("@")[0] ||
+          "User";
 
-      if (!error) {
+        const { error } = await supabase.from("follows").insert({
+          guest_id: user.id,
+          guest_name: guestName,
+          following_id: authorGuestId,
+        });
+
+        if (error) {
+          alert(error.message);
+          setLoading(false);
+          return;
+        }
+
         setFollowing(true);
         setCount((prev) => prev + 1);
       }
+    } catch (error) {
+      console.error("Follow error:", error);
+      alert("Something went wrong. Please try again.");
     }
 
     setLoading(false);
@@ -60,13 +89,14 @@ export function FollowButton({
 
   return (
     <button
+      type="button"
       onClick={toggleFollow}
       disabled={loading}
       className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
         following
-          ? "border border-black/10 bg-white text-slate-700"
-          : "bg-[#6d5efc] text-white"
-      }`}
+          ? "border border-black/10 bg-white text-slate-700 hover:bg-slate-100"
+          : "bg-[#6d5efc] text-white hover:bg-[#5c4df0]"
+      } disabled:cursor-not-allowed disabled:opacity-60`}
     >
       {loading
         ? "Please wait..."
