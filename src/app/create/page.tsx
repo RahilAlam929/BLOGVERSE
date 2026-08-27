@@ -100,9 +100,11 @@ export default function CreatePage() {
       console.log("1. Checking logged-in user...");
 
       const {
-        data: { user },
+        data: { session },
         error: authError,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+
+      const user = session?.user ?? null;
 
       console.log("2. Auth result:", user, authError);
 
