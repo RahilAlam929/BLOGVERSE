@@ -76,89 +76,119 @@ export default function ProfilePage() {
     setLoading(true);
     setError("");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-    const authUser = session?.user ?? null;
+      if (sessionError) {
+        console.error("PROFILE SESSION ERROR:", sessionError);
+        setError(sessionError.message);
+        setLoading(false);
+        return;
+      }
 
-    console.log("PROFILE AUTH:", authUser?.id || "NO USER");
+      const authUser = session?.user ?? null;
 
-    if (!authUser) {
+      console.log("PROFILE USER:", authUser?.id || "NO USER");
+
+      if (!authUser) {
+        setUser(null);
+        setProfile(null);
+        setPosts([]);
+        setFollowers(0);
+        setFollowing(0);
+        setLoading(false);
+        return;
+      }
+
+      setUser(authUser);
+
+      // Profile is optional. A user can have 0 posts and still have a profile.
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, name, username, avatar_url")
+        .eq("id", authUser.id)
+        .maybeSingle();
+
+      console.log("PROFILE DATA:", profileData);
+      console.log("PROFILE ERROR:", profileError);
+
+      if (profileError) {
+        console.warn("Profile query failed:", profileError.message);
+      }
+
+      const currentProfile = profileData as Profile | null;
+
+      setProfile(currentProfile);
+
+      setName(
+        currentProfile?.name ||
+          authUser.user_metadata?.full_name ||
+          authUser.user_metadata?.name ||
+          ""
+      );
+
+      setUsername(currentProfile?.username || "");
+
+      // Posts are optional. Empty posts must never hide the profile.
+      const { data: postData, error: postsError } = await supabase
+        .from("posts")
+        .select("id, title, slug, excerpt, cover_image, created_at")
+        .eq("guest_id", authUser.id)
+        .order("created_at", { ascending: false });
+
+      console.log("POSTS DATA:", postData);
+      console.log("POSTS ERROR:", postsError);
+
+      if (postsError) {
+        console.warn("Posts query failed:", postsError.message);
+        setPosts([]);
+      } else {
+        setPosts((postData ?? []) as Post[]);
+      }
+
+      // Followers are optional.
+      const { count: followerCount, error: followerError } = await supabase
+        .from("follows")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("following_id", authUser.id);
+
+      console.log("FOLLOWERS:", followerCount);
+      console.log("FOLLOWERS ERROR:", followerError);
+
+      // Following is optional.
+      const { count: followingCount, error: followingError } = await supabase
+        .from("follows")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("guest_id", authUser.id);
+
+      console.log("FOLLOWING:", followingCount);
+      console.log("FOLLOWING ERROR:", followingError);
+
+      setFollowers(followerCount ?? 0);
+      setFollowing(followingCount ?? 0);
+
       setLoading(false);
-      return;
-    }
+    } catch (err: unknown) {
+      console.error("PROFILE LOAD ERROR:", err);
 
-    setUser(authUser);
+      const message =
+        err instanceof Error ? err.message : "Unable to load profile.";
 
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, name, username, avatar_url")
-      .eq("id", authUser.id)
-      .maybeSingle();
-
-    console.log("PROFILE DATA:", profileData);
-    console.log("PROFILE ERROR:", profileError);
-
-    if (profileError) {
-      setError(profileError.message);
+      setError(message);
+      setPosts([]);
+      setFollowers(0);
+      setFollowing(0);
       setLoading(false);
-      return;
     }
-
-    const currentProfile = profileData as Profile | null;
-
-    setProfile(currentProfile);
-
-    setName(
-      currentProfile?.name ||
-        authUser.user_metadata?.full_name ||
-        authUser.user_metadata?.name ||
-        ""
-    );
-
-    setUsername(currentProfile?.username || "");
-
-    const { data: postData, error: postsError } = await supabase
-      .from("posts")
-      .select(
-        "id, title, slug, excerpt, cover_image, created_at"
-      )
-      .eq("guest_id", authUser.id)
-      .order("created_at", { ascending: false });
-
-    console.log("POSTS DATA:", postData);
-    console.log("POSTS ERROR:", postsError);
-
-    if (postsError) {
-      setError(postsError.message);
-    }
-
-    setPosts((postData ?? []) as Post[]);
-
-    const { count: followerCount } = await supabase
-      .from("follows")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("following_id", authUser.id);
-
-    const { count: followingCount } = await supabase
-      .from("follows")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("guest_id", authUser.id);
-
-    console.log("FOLLOWERS:", followerCount);
-    console.log("FOLLOWING:", followingCount);
-
-    setFollowers(followerCount ?? 0);
-    setFollowing(followingCount ?? 0);
-
-    setLoading(false);
   }
 
   async function saveProfile() {
