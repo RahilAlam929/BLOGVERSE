@@ -68,23 +68,36 @@ function makeHeadingId(text: string) {
     .replace(/[^\w-]/g, "");
 }
 
+function wordCount(blocks: Block[]) {
+  return blocks.reduce((total, block) => {
+    const text =
+      block.type === "image"
+        ? block.caption || ""
+        : block.type === "code"
+          ? block.code
+          : block.text;
+
+    return total + text.split(/\s+/).filter(Boolean).length;
+  }, 0);
+}
+
 function renderBlock(block: Block, index: number) {
   if (block.type === "heading") {
     const headingId = makeHeadingId(block.text);
 
     return (
-      <section key={index} id={headingId} className="scroll-mt-28">
-        <h2 className="group mt-16 text-2xl font-black leading-tight tracking-[-0.025em] text-slate-950 sm:text-3xl lg:text-[2.15rem] dark:text-white">
+      <h2
+        key={index}
+        id={headingId}
+        className="reading-text group mt-14 scroll-mt-28 text-2xl font-black leading-tight sm:text-3xl lg:text-4xl"
+      >
+        <a href={`#${headingId}`} className="inline-flex gap-2">
           {block.text}
-          <a
-            href={`#${headingId}`}
-            className="ml-2 text-sm font-bold text-violet-500 opacity-0 transition group-hover:opacity-100"
-            aria-label={`Link to ${block.text}`}
-          >
+          <span className="opacity-0 transition group-hover:opacity-50">
             #
-          </a>
-        </h2>
-      </section>
+          </span>
+        </a>
+      </h2>
     );
   }
 
@@ -92,29 +105,29 @@ function renderBlock(block: Block, index: number) {
     return (
       <blockquote
         key={index}
-        className="my-10 rounded-r-2xl border-l-4 border-violet-500 bg-violet-50 px-6 py-5 text-lg font-medium italic leading-8 text-slate-700 dark:bg-violet-500/[0.08] dark:text-slate-300"
+        className="reading-surface reading-border mt-9 rounded-r-2xl border-l-4 px-5 py-5 sm:px-7"
+        style={{ borderLeftColor: "var(--reading-accent)" }}
       >
-        <span className="mr-2 text-3xl font-black text-violet-500">“</span>
-        {block.text}
+        <p className="reading-text text-lg italic leading-8 sm:text-xl">
+          {block.text}
+        </p>
       </blockquote>
     );
   }
 
   if (block.type === "image") {
     return (
-      <figure key={index} className="my-10">
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-slate-100 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={block.url}
-            alt={block.caption || "Article image"}
-            className="h-auto max-h-[700px] w-full object-cover"
-            loading="lazy"
-          />
-        </div>
+      <figure key={index} className="mt-9">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={block.url}
+          alt={block.caption || "Article image"}
+          className="reading-image w-full rounded-2xl border object-cover shadow-sm"
+          style={{ borderColor: "var(--reading-border)" }}
+        />
 
         {block.caption ? (
-          <figcaption className="mt-3 text-center text-sm leading-6 text-slate-500 dark:text-slate-500">
+          <figcaption className="reading-muted mt-3 text-center text-sm">
             {block.caption}
           </figcaption>
         ) : null}
@@ -126,23 +139,16 @@ function renderBlock(block: Block, index: number) {
     return (
       <div
         key={index}
-        className="my-10 overflow-hidden rounded-2xl border border-slate-800 bg-[#111318] shadow-xl"
+        className="reading-code mt-9 overflow-hidden rounded-2xl border"
+        style={{ borderColor: "var(--reading-border)" }}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <div className="flex gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+        {block.language ? (
+          <div className="border-b px-4 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-zinc-400">
+            {block.language}
           </div>
+        ) : null}
 
-          {block.language ? (
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              {block.language}
-            </span>
-          ) : null}
-        </div>
-
-        <pre className="overflow-x-auto p-5 text-[13px] leading-7 text-slate-200 sm:text-sm">
+        <pre className="overflow-x-auto p-5 text-sm leading-7">
           <code>{block.code}</code>
         </pre>
       </div>
@@ -152,7 +158,7 @@ function renderBlock(block: Block, index: number) {
   return (
     <p
       key={index}
-      className="mt-7 whitespace-pre-wrap text-[17px] leading-[1.9] text-slate-700 sm:text-[18px] sm:leading-[1.95] lg:text-[19px] dark:text-slate-300"
+      className="reading-text mt-7 whitespace-pre-wrap text-[17px] leading-[1.9] sm:text-[19px]"
     >
       {block.text}
     </p>
@@ -165,7 +171,6 @@ export default async function BlogSlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
   const supabase = await createClient();
 
   const { data: rawPost, error } = await supabase
@@ -264,237 +269,211 @@ export default async function BlogSlugPage({
       id: makeHeadingId(block.text),
     }));
 
-  const readingTime = Math.max(
-    1,
-    Math.ceil(
-      blocks.reduce((total, block) => {
-        if (block.type === "image") {
-          return total;
-        }
-
-        const text = block.type === "code" ? block.code : block.text;
-
-        return total + text.split(/\s+/).filter(Boolean).length;
-      }, 0) / 200,
-    ),
-  );
+  const readingWords = wordCount(blocks);
+  const readingMinutes = Math.max(1, Math.ceil(readingWords / 200));
+  const commentCount = comments.length;
+  const likeCount = post.likes?.length ?? 0;
 
   return (
-    <main className="min-h-screen bg-[#f5f5f7] text-slate-950 transition-colors dark:bg-[#0b0d10] dark:text-white">
-      {/* TOP READING BAR */}
-      <div className="border-b border-black/[0.06] bg-white/80 backdrop-blur-xl dark:border-white/[0.07] dark:bg-[#0b0d10]/90">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <a
-            href="/blogs"
-            className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"
-          >
-            <span className="text-lg">←</span>
-            <span className="hidden sm:inline">Back to blogs</span>
-            <span className="sm:hidden">Back</span>
-          </a>
+    <main className="reading-page min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <div className="mx-auto max-w-[900px]">
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-xs font-semibold text-slate-400 sm:inline">
-              {readingTime} min read
-            </span>
+          {/* READING CONTROLS */}
+
+          <div className="reading-surface reading-border sticky top-[76px] z-30 mb-8 flex items-center justify-between gap-4 rounded-2xl border px-3 py-2.5 shadow-sm backdrop-blur-xl sm:px-4">
+            <div className="reading-muted flex items-center gap-2 text-xs font-semibold">
+              <span>Reading mode</span>
+              <span className="hidden sm:inline">•</span>
+              <span>{readingMinutes} min read</span>
+            </div>
 
             <ReadingThemeToggle />
           </div>
-        </div>
-      </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
-        {/* ARTICLE HEADER */}
-        <article className="mx-auto max-w-[820px]">
-          <div className="flex flex-wrap gap-2">
-            {post.category ? (
-              <span className="rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">
-                {post.category}
-              </span>
-            ) : null}
+          {/* ARTICLE HEADER */}
 
-            {post.topic ? (
-              <span className="rounded-full border border-violet-500/20 bg-violet-500/[0.08] px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-violet-600 dark:text-violet-300">
-                {post.topic}
-              </span>
-            ) : null}
+          <article>
+            <div className="mb-6 flex flex-wrap gap-2">
+              {[post.category, post.topic, post.language]
+                .filter(Boolean)
+                .map((item) => (
+                  <span
+                    key={item}
+                    className="reading-surface reading-border reading-text rounded-full border px-3 py-1.5 text-xs font-bold"
+                  >
+                    {item}
+                  </span>
+                ))}
+            </div>
 
-            {post.language ? (
-              <span className="rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-slate-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-slate-300">
-                {post.language}
-              </span>
-            ) : null}
-          </div>
+            <h1 className="reading-text max-w-4xl text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+              {post.title}
+            </h1>
 
-          <h1 className="mt-6 text-4xl font-black leading-[1.05] tracking-[-0.045em] text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
-            {post.title}
-          </h1>
-
-          {post.excerpt ? (
-            <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-500 sm:text-xl sm:leading-9 dark:text-slate-400">
-              {post.excerpt}
-            </p>
-          ) : null}
-
-          {/* AUTHOR */}
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-y border-black/[0.08] py-5 dark:border-white/[0.08]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-sm font-black text-white">
-                {(post.guest_name || "A")
-                  .slice(0, 1)
-                  .toUpperCase()}
-              </div>
-
+            <div className="reading-border mt-7 flex flex-col gap-5 border-b pb-7 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-black text-slate-950 dark:text-white">
+                <p className="reading-text font-bold">
                   {post.guest_name || "Anonymous"}
                 </p>
 
-                <p className="text-xs text-slate-400">
-                  {formatDate(post.created_at)} · {readingTime} min read
+                <p className="reading-muted mt-1 text-sm">
+                  {formatDate(post.created_at)}
+                  {readingWords > 0 ? ` • ${readingWords} words` : ""}
                 </p>
               </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {post.guest_id ? (
-                <FollowButton
-                  authorGuestId={post.guest_id}
-                  initialFollowing={false}
-                  initialFollowersCount={followersCount}
-                />
-              ) : null}
+              <div className="flex flex-wrap items-center gap-2">
+                {post.guest_id ? (
+                  <FollowButton
+                    authorGuestId={post.guest_id}
+                    initialFollowing={false}
+                    initialFollowersCount={followersCount}
+                  />
+                ) : null}
 
-              <DeletePostButton
-                postId={post.id}
-                authorGuestId={post.guest_id}
-              />
-            </div>
-          </div>
-
-          {/* COVER */}
-          {post.cover_image ? (
-            <figure className="mt-9 overflow-hidden rounded-[28px] border border-black/[0.08] bg-white shadow-xl dark:border-white/[0.08] dark:bg-white/[0.03]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                className="h-auto max-h-[620px] w-full object-cover"
-              />
-            </figure>
-          ) : null}
-
-          {/* CONTENT + TOC */}
-          <div className="mt-10 lg:grid lg:grid-cols-[1fr_190px] lg:gap-12">
-            <div>
-              {headings.length > 0 ? (
-                <details className="mb-10 overflow-hidden rounded-2xl border border-black/[0.08] bg-white dark:border-white/[0.08] dark:bg-white/[0.035] lg:hidden">
-                  <summary className="cursor-pointer px-5 py-4 text-sm font-black">
-                    📑 On this page
-                  </summary>
-
-                  <div className="border-t border-black/[0.06] px-5 py-4 dark:border-white/[0.06]">
-                    <nav className="space-y-2">
-                      {headings.map((item) => (
-                        <a
-                          key={item.id}
-                          href={`#${item.id}`}
-                          className="block text-sm leading-6 text-slate-500 transition hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300"
-                        >
-                          {item.text}
-                        </a>
-                      ))}
-                    </nav>
-                  </div>
-                </details>
-              ) : null}
-
-              <div>
-                {blocks.length > 0 ? (
-                  blocks.map((block, index) =>
-                    renderBlock(block, index),
-                  )
-                ) : (
-                  <p className="text-slate-500">
-                    No content available.
-                  </p>
-                )}
-              </div>
-
-              {/* ARTICLE ACTIONS */}
-              <div className="mt-14 flex flex-wrap items-center gap-3 border-t border-black/[0.08] pt-7 dark:border-white/[0.08]">
-                <LikeButton
+                <DeletePostButton
                   postId={post.id}
-                  initialLiked={false}
-                  initialCount={post.likes?.length ?? 0}
+                  authorGuestId={post.guest_id}
                 />
-
-                <ShareSection />
               </div>
             </div>
 
-            {/* DESKTOP TOC */}
-            {headings.length > 0 ? (
-              <aside className="hidden lg:block">
-                <div className="sticky top-28">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    On this page
-                  </p>
+            {post.excerpt ? (
+              <p className="reading-muted mt-8 max-w-3xl text-lg leading-8 sm:text-xl sm:leading-9">
+                {post.excerpt}
+              </p>
+            ) : null}
 
-                  <nav className="mt-4 border-l border-black/[0.08] pl-4 dark:border-white/[0.08]">
-                    <div className="space-y-3">
-                      {headings.map((item) => (
-                        <a
-                          key={item.id}
-                          href={`#${item.id}`}
-                          className="block text-xs font-semibold leading-5 text-slate-400 transition hover:text-violet-600 dark:hover:text-violet-300"
-                        >
-                          {item.text}
-                        </a>
-                      ))}
-                    </div>
-                  </nav>
-                </div>
+            {/* TABLE OF CONTENTS */}
+
+            {headings.length > 0 ? (
+              <aside className="reading-surface reading-border mt-9 rounded-2xl border p-5 sm:p-6">
+                <p className="reading-muted text-xs font-black uppercase tracking-[0.18em]">
+                  Contents
+                </p>
+
+                <nav className="mt-4 space-y-1">
+                  {headings.map((item, index) => (
+                    <a
+                      key={`${item.id}-${index}`}
+                      href={`#${item.id}`}
+                      className="reading-text block rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      {index + 1}. {item.text}
+                    </a>
+                  ))}
+                </nav>
               </aside>
             ) : null}
-          </div>
 
-          {/* COMMENTS */}
-          <section className="mt-20 border-t border-black/[0.08] pt-12 dark:border-white/[0.08]">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-500">
-                Community
-              </p>
+            {/* COVER */}
 
-              <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-                Join the conversation
-              </h2>
+            {post.cover_image ? (
+              <figure className="mt-9">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.cover_image}
+                  alt={post.title}
+                  className="reading-image w-full rounded-3xl border object-cover shadow-sm"
+                  style={{ borderColor: "var(--reading-border)" }}
+                />
+              </figure>
+            ) : null}
 
-              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Share your thoughts, questions or perspective on this article.
-              </p>
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-black/[0.08] bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.035] sm:p-7">
-              <CommentForm
-                postId={post.id}
-                parentId={null}
-              />
-            </div>
+            {/* CONTENT */}
 
             <div className="mt-10">
-              <CommentThread
-                comments={comments}
-                postId={post.id}
-              />
+              {blocks.length > 0 ? (
+                blocks.map((block, index) => renderBlock(block, index))
+              ) : (
+                <p className="reading-muted py-10 text-center">
+                  No content available.
+                </p>
+              )}
             </div>
-          </section>
-        </article>
+
+            {/* ARTICLE ACTIONS */}
+
+            <div className="reading-border mt-14 border-y py-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="reading-text text-sm font-bold">
+                    Enjoyed this article?
+                  </p>
+                  <p className="reading-muted mt-1 text-xs">
+                    Support the writer and share it with others.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <LikeButton
+                    postId={post.id}
+                    initialLiked={false}
+                    initialCount={likeCount}
+                  />
+
+                  <a
+                    href="#comments"
+                    className="reading-surface reading-border reading-text inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-bold transition hover:-translate-y-0.5"
+                  >
+                    💬 {commentCount}
+                    <span className="hidden sm:inline">Comments</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* SHARE */}
+
+            <ShareSection />
+
+            {/* COMMENTS */}
+
+            <section
+              id="comments"
+              className="mt-16 scroll-mt-28"
+            >
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="reading-muted text-xs font-black uppercase tracking-[0.18em]">
+                    Discussion
+                  </p>
+
+                  <h2 className="reading-text mt-2 text-3xl font-black tracking-tight sm:text-4xl">
+                    Comments
+                  </h2>
+                </div>
+
+                <span className="reading-muted text-sm">
+                  {commentCount} {commentCount === 1 ? "comment" : "comments"}
+                </span>
+              </div>
+
+              <div className="reading-surface reading-border mt-7 rounded-3xl border p-5 sm:p-7">
+                <CommentForm
+                  postId={post.id}
+                  parentId={null}
+                />
+              </div>
+
+              <div className="mt-8">
+                <CommentThread
+                  comments={comments}
+                  postId={post.id}
+                />
+              </div>
+            </section>
+          </article>
+        </div>
 
         {/* RELATED */}
-        <section className="mt-20 border-t border-black/[0.08] pt-14 dark:border-white/[0.08]">
-          <BlogDiscovery posts={relatedPosts} />
-        </section>
+
+        {relatedPosts.length > 0 ? (
+          <section className="mt-20 border-t border-black/10 pt-12 dark:border-white/10">
+            <BlogDiscovery posts={relatedPosts} />
+          </section>
+        ) : null}
       </div>
     </main>
   );
