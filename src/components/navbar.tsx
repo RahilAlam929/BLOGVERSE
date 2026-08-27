@@ -32,8 +32,10 @@ export default function Navbar() {
 
     const loadUser = async () => {
       const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const authUser = session?.user ?? null;
 
       if (!authUser) {
         setUser(null);

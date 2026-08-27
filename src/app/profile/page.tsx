@@ -20,12 +20,41 @@ type Post = {
   created_at: string | null;
 };
 
+function formatDate(date?: string | null) {
+  if (!date) return "Recently";
+
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Recently";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function truncate(text?: string | null, length = 110) {
+  if (!text) {
+    return "Discover this story on BlogVerse.";
+  }
+
+  const clean = text.replace(/\s+/g, " ").trim();
+
+  return clean.length > length
+    ? `${clean.slice(0, length)}...`
+    : clean;
+}
+
 export default function ProfilePage() {
   const supabase = createClient();
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
+
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
 
@@ -48,8 +77,10 @@ export default function ProfilePage() {
     setError("");
 
     const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const authUser = session?.user ?? null;
 
     if (!authUser) {
       setLoading(false);
@@ -73,30 +104,44 @@ export default function ProfilePage() {
     const currentProfile = profileData as Profile | null;
 
     setProfile(currentProfile);
+
     setName(
       currentProfile?.name ||
         authUser.user_metadata?.full_name ||
         authUser.user_metadata?.name ||
         ""
     );
+
     setUsername(currentProfile?.username || "");
 
-    const { data: postData } = await supabase
+    const { data: postData, error: postsError } = await supabase
       .from("posts")
-      .select("id, title, slug, excerpt, cover_image, created_at")
+      .select(
+        "id, title, slug, excerpt, cover_image, created_at"
+      )
       .eq("guest_id", authUser.id)
       .order("created_at", { ascending: false });
+
+    if (postsError) {
+      setError(postsError.message);
+    }
 
     setPosts((postData ?? []) as Post[]);
 
     const { count: followerCount } = await supabase
       .from("follows")
-      .select("id", { count: "exact", head: true })
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
       .eq("following_id", authUser.id);
 
     const { count: followingCount } = await supabase
       .from("follows")
-      .select("id", { count: "exact", head: true })
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
       .eq("guest_id", authUser.id);
 
     setFollowers(followerCount ?? 0);
@@ -113,7 +158,10 @@ export default function ProfilePage() {
     setError("");
 
     const cleanName = name.trim();
-    const cleanUsername = username.trim().replace(/^@/, "").toLowerCase();
+    const cleanUsername = username
+      .trim()
+      .replace(/^@/, "")
+      .toLowerCase();
 
     if (!cleanName) {
       setError("Name cannot be empty.");
@@ -130,7 +178,9 @@ export default function ProfilePage() {
           username: cleanUsername || null,
           avatar_url: profile?.avatar_url || null,
         },
-        { onConflict: "id" }
+        {
+          onConflict: "id",
+        }
       )
       .select("id, name, username, avatar_url")
       .single();
@@ -144,6 +194,7 @@ export default function ProfilePage() {
     setProfile(data as Profile);
     setName(data.name || "");
     setUsername(data.username || "");
+
     setMessage("Profile updated successfully.");
     setSaving(false);
 
@@ -174,6 +225,7 @@ export default function ProfilePage() {
     }
 
     const extension = file.name.split(".").pop() || "jpg";
+
     const filePath = `${user.id}/avatar-${Date.now()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
@@ -192,7 +244,9 @@ export default function ProfilePage() {
 
     const {
       data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
 
     const { data, error: updateError } = await supabase
       .from("profiles")
@@ -200,10 +254,15 @@ export default function ProfilePage() {
         {
           id: user.id,
           name: profile?.name || name.trim() || null,
-          username: profile?.username || username.trim() || null,
+          username:
+            profile?.username ||
+            username.trim().replace(/^@/, "") ||
+            null,
           avatar_url: publicUrl,
         },
-        { onConflict: "id" }
+        {
+          onConflict: "id",
+        }
       )
       .select("id, name, username, avatar_url")
       .single();
@@ -246,18 +305,25 @@ export default function ProfilePage() {
       .toUpperCase();
   }, [displayName]);
 
-  const publicProfileId = user?.id;
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-5 py-16 text-white sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-5xl">
-          <div className="h-72 animate-pulse rounded-[32px] border border-white/[0.08] bg-white/[0.03]" />
-          <div className="mt-8 h-10 w-56 animate-pulse rounded-xl bg-white/[0.05]" />
-          <div className="mt-6 grid gap-5 md:grid-cols-3">
-            <div className="h-64 animate-pulse rounded-[26px] bg-white/[0.03]" />
-            <div className="h-64 animate-pulse rounded-[26px] bg-white/[0.03]" />
-            <div className="h-64 animate-pulse rounded-[26px] bg-white/[0.03]" />
+      <main className="min-h-screen bg-[#07070a] px-4 py-10 text-white sm:px-8">
+        <div className="mx-auto max-w-5xl animate-pulse">
+          <div className="h-40 rounded-[30px] bg-white/[0.04]" />
+
+          <div className="mt-8 flex gap-6">
+            <div className="h-28 w-28 rounded-full bg-white/[0.05]" />
+
+            <div className="flex-1">
+              <div className="h-8 w-52 rounded-lg bg-white/[0.05]" />
+              <div className="mt-4 h-5 w-32 rounded bg-white/[0.04]" />
+            </div>
+          </div>
+
+          <div className="mt-12 grid grid-cols-3 gap-2">
+            <div className="aspect-square rounded-2xl bg-white/[0.04]" />
+            <div className="aspect-square rounded-2xl bg-white/[0.04]" />
+            <div className="aspect-square rounded-2xl bg-white/[0.04]" />
           </div>
         </div>
       </main>
@@ -266,8 +332,8 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-5 text-white">
-        <div className="w-full max-w-md rounded-[30px] border border-white/10 bg-white/[0.035] p-8 text-center">
+      <main className="flex min-h-screen items-center justify-center bg-[#07070a] px-5 text-white">
+        <div className="w-full max-w-md rounded-[30px] border border-white/10 bg-white/[0.035] p-8 text-center shadow-2xl">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-xl font-black text-black">
             BV
           </div>
@@ -277,7 +343,8 @@ export default function ProfilePage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-white/40">
-            Create your profile, publish articles and connect with readers.
+            Create your profile, publish articles and connect
+            with readers.
           </p>
 
           <Link
@@ -292,24 +359,35 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-5 py-10 text-white sm:px-8 lg:px-10 lg:py-14">
-      <div className="mx-auto max-w-6xl">
-        <section className="relative overflow-hidden rounded-[34px] border border-white/[0.08] bg-[#0a0a0a]">
+    <main className="min-h-screen bg-[#07070a] px-4 pb-20 pt-8 text-white sm:px-8 sm:pt-12">
+      <div className="mx-auto max-w-5xl">
+
+        {/* PROFILE HEADER */}
+
+        <section className="relative overflow-hidden rounded-[32px] border border-white/[0.08] bg-white/[0.025] shadow-2xl shadow-black/30 backdrop-blur-xl">
+
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-violet-600/10 blur-[120px]"
+            className="pointer-events-none absolute -right-32 -top-40 h-96 w-96 rounded-full bg-violet-600/[0.12] blur-[120px]"
           />
 
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-blue-600/10 blur-[120px]"
+            className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-blue-500/[0.07] blur-[110px]"
           />
 
-          <div className="relative p-7 sm:p-10 lg:p-12">
-            <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <div className="relative">
-                  <div className="h-28 w-28 overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.06] shadow-2xl sm:h-32 sm:w-32">
+          <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+
+            <div className="flex flex-col gap-8 sm:flex-row sm:items-center">
+
+              {/* AVATAR */}
+
+              <div className="relative mx-auto shrink-0 sm:mx-0">
+
+                <div className="h-32 w-32 overflow-hidden rounded-full border border-white/15 bg-gradient-to-br from-violet-500/20 via-white/[0.04] to-blue-500/10 p-1 shadow-2xl sm:h-36 sm:w-36">
+
+                  <div className="h-full w-full overflow-hidden rounded-full bg-[#111116]">
+
                     {avatar ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -322,239 +400,315 @@ export default function ProfilePage() {
                         {initials || "U"}
                       </div>
                     )}
-                  </div>
 
-                  <label className="absolute -bottom-2 -right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white text-black shadow-xl transition hover:scale-105">
-                    <span className="text-sm">+</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={uploadAvatar}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30">
-                    Your profile
-                  </p>
-
-                  <h1 className="mt-2 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-                    {displayName}
-                  </h1>
-
-                  <p className="mt-2 text-sm text-white/35">
-                    {profile?.username
-                      ? `@${profile.username}`
-                      : user.email}
-                  </p>
-
-                  <div className="mt-6 flex flex-wrap gap-7">
-                    <div>
-                      <p className="text-xl font-black">{posts.length}</p>
-                      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
-                        Posts
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xl font-black">{followers}</p>
-                      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
-                        Followers
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xl font-black">{following}</p>
-                      <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
-                        Following
-                      </p>
-                    </div>
                   </div>
                 </div>
+
+                <label className="absolute bottom-1 right-1 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-black bg-white text-black shadow-xl transition hover:scale-105">
+                  <span className="text-lg font-black">
+                    +
+                  </span>
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={uploadAvatar}
+                    disabled={uploading}
+                    className="hidden"
+                  />
+                </label>
               </div>
 
-              {publicProfileId ? (
-                <Link
-                  href={`/author/${publicProfileId}`}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
-                >
-                  View public profile →
-                </Link>
-              ) : null}
+              {/* PROFILE INFO */}
+
+              <div className="min-w-0 flex-1 text-center sm:text-left">
+
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+                  <div>
+                    <h1 className="text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+                      {displayName}
+                    </h1>
+
+                    <p className="mt-1 text-sm text-white/35">
+                      {profile?.username
+                        ? `@${profile.username}`
+                        : user.email}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-center gap-2 sm:justify-end">
+
+                    <a
+                      href="#edit-profile"
+                      className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-white/70 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                    >
+                      Edit profile
+                    </a>
+
+                    <Link
+                      href={`/author/${user.id}`}
+                      className="rounded-xl bg-white px-4 py-2.5 text-xs font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90"
+                    >
+                      View profile
+                    </Link>
+
+                  </div>
+
+                </div>
+
+                {/* STATS */}
+
+                <div className="mt-7 flex justify-center gap-8 sm:justify-start sm:gap-10">
+
+                  <div>
+                    <p className="text-lg font-black">
+                      {posts.length}
+                    </p>
+
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
+                      Posts
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-lg font-black">
+                      {followers}
+                    </p>
+
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
+                      Followers
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-lg font-black">
+                      {following}
+                    </p>
+
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white/30">
+                      Following
+                    </p>
+                  </div>
+
+                </div>
+
+              </div>
             </div>
           </div>
         </section>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <section className="rounded-[28px] border border-white/[0.08] bg-white/[0.025] p-6 sm:p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/25">
-                  Account
-                </p>
+        {/* ARTICLES */}
 
-                <h2 className="mt-2 text-2xl font-black">
-                  Profile details
-                </h2>
-              </div>
+        <section className="mt-10">
+
+          <div className="mb-5 flex items-end justify-between border-b border-white/[0.08] pb-4">
+
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-violet-400">
+                Your content
+              </p>
+
+              <h2 className="mt-1 text-2xl font-black tracking-tight">
+                Articles
+              </h2>
             </div>
 
-            <div className="mt-7 space-y-5">
-              <div>
-                <label className="mb-2 block text-xs font-bold text-white/40">
-                  Display name
-                </label>
+            <Link
+              href="/create"
+              className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-white/65 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            >
+              + Write
+            </Link>
 
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="Your name"
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/25"
-                />
+          </div>
+
+          {posts.length === 0 ? (
+            <div className="rounded-[30px] border border-white/[0.08] bg-white/[0.025] px-6 py-16 text-center">
+
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-2xl">
+                ✦
               </div>
 
-              <div>
-                <label className="mb-2 block text-xs font-bold text-white/40">
-                  Username
-                </label>
+              <h3 className="mt-5 text-xl font-black">
+                No articles yet
+              </h3>
 
-                <div className="flex items-center rounded-2xl border border-white/10 bg-black/30 focus-within:border-white/25">
-                  <span className="pl-4 text-sm text-white/25">@</span>
-
-                  <input
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    placeholder="username"
-                    className="w-full bg-transparent px-2 py-3.5 text-sm text-white outline-none placeholder:text-white/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-bold text-white/40">
-                  Email
-                </label>
-
-                <div className="rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3.5 text-sm text-white/35">
-                  {user.email || "No email"}
-                </div>
-              </div>
-
-              {error ? (
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-300">
-                  {error}
-                </div>
-              ) : null}
-
-              {message ? (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-300">
-                  {message}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={saveProfile}
-                disabled={saving}
-                className="w-full rounded-2xl bg-white px-5 py-3.5 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save changes"}
-              </button>
-            </div>
-          </section>
-
-          <section>
-            <div className="mb-5 flex items-end justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/25">
-                  Published work
-                </p>
-
-                <h2 className="mt-2 text-2xl font-black">
-                  Your articles
-                </h2>
-              </div>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/35">
+                Your published stories will appear here like
+                a personal creator feed.
+              </p>
 
               <Link
                 href="/create"
-                className="rounded-xl bg-white/[0.06] px-4 py-2.5 text-xs font-bold text-white/60 transition hover:bg-white/[0.1] hover:text-white"
+                className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90"
               >
-                + Write
+                Create your first article →
               </Link>
+
             </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
 
-            {posts.length === 0 ? (
-              <div className="rounded-[28px] border border-white/[0.08] bg-white/[0.025] p-10 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.06] text-xl">
-                  ✦
-                </div>
-
-                <h3 className="mt-5 text-xl font-black">
-                  No articles yet
-                </h3>
-
-                <p className="mt-2 text-sm text-white/30">
-                  Share your first idea with the BlogVerse community.
-                </p>
-
+              {posts.map((post) => (
                 <Link
-                  href="/create"
-                  className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-black text-black"
+                  key={post.id}
+                  href={`/blog/${post.slug}`}
+                  className="group relative aspect-square overflow-hidden rounded-xl border border-white/[0.06] bg-[#111116] sm:rounded-2xl"
                 >
-                  Create your first article →
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {posts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/blog/${post.slug}`}
-                    className="group flex gap-4 overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.025] p-4 transition hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-white/[0.045]"
-                  >
-                    <div className="h-24 w-28 shrink-0 overflow-hidden rounded-2xl bg-[#111] sm:h-28 sm:w-40">
-                      {post.cover_image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={post.cover_image}
-                          alt={post.title}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-3xl font-black text-white/[0.04]">
-                          BV
-                        </div>
-                      )}
+
+                  {post.cover_image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={post.cover_image}
+                      alt={post.title}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-500/[0.12] via-white/[0.03] to-blue-500/[0.08]">
+                      <span className="text-5xl font-black text-white/[0.12]">
+                        BV
+                      </span>
                     </div>
+                  )}
 
-                    <div className="min-w-0 py-1">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">
-                        {post.created_at
-                          ? new Intl.DateTimeFormat("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }).format(new Date(post.created_at))
-                          : "Recently"}
-                      </p>
+                  {/* HOVER */}
 
-                      <h3 className="mt-2 line-clamp-2 text-lg font-black leading-tight tracking-[-0.02em]">
+                  <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/90 via-black/30 to-transparent p-4 opacity-0 transition duration-300 group-hover:opacity-100">
+
+                    <div className="translate-y-2 transition duration-300 group-hover:translate-y-0">
+
+                      <h3 className="line-clamp-2 text-sm font-black leading-tight text-white sm:text-base">
                         {post.title}
                       </h3>
 
-                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/30">
-                        {post.excerpt || "Read this article on BlogVerse."}
+                      <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-white/60">
+                        {truncate(post.excerpt)}
                       </p>
+
+                      <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-white/45">
+                        <span>
+                          {formatDate(post.created_at)}
+                        </span>
+
+                        <span className="text-white">
+                          Read →
+                        </span>
+                      </div>
+
                     </div>
-                  </Link>
-                ))}
+                  </div>
+
+                </Link>
+              ))}
+
+            </div>
+          )}
+
+        </section>
+
+        {/* EDIT PROFILE */}
+
+        <section
+          id="edit-profile"
+          className="mt-12 rounded-[30px] border border-white/[0.08] bg-white/[0.025] p-6 shadow-2xl shadow-black/20 sm:p-8"
+        >
+
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/25">
+              Account
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Edit profile
+            </h2>
+
+            <p className="mt-2 text-sm text-white/35">
+              Update the information people see on your
+              BlogVerse profile.
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-5 sm:grid-cols-2">
+
+            <div>
+              <label className="mb-2 block text-xs font-bold text-white/40">
+                Display name
+              </label>
+
+              <input
+                value={name}
+                onChange={(event) =>
+                  setName(event.target.value)
+                }
+                placeholder="Your name"
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-violet-400/40"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold text-white/40">
+                Username
+              </label>
+
+              <div className="flex items-center rounded-2xl border border-white/10 bg-black/30 focus-within:border-violet-400/40">
+
+                <span className="pl-4 text-sm text-white/25">
+                  @
+                </span>
+
+                <input
+                  value={username}
+                  onChange={(event) =>
+                    setUsername(event.target.value)
+                  }
+                  placeholder="username"
+                  className="w-full bg-transparent px-2 py-3.5 text-sm text-white outline-none placeholder:text-white/20"
+                />
+
               </div>
-            )}
-          </section>
-        </div>
+            </div>
+
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3.5 text-sm text-white/30">
+            {user.email || "No email"}
+          </div>
+
+          {error ? (
+            <div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-4 py-3 text-sm text-red-300">
+              {error}
+            </div>
+          ) : null}
+
+          {message ? (
+            <div className="mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-300">
+              {message}
+            </div>
+          ) : null}
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+
+            <button
+              type="button"
+              onClick={saveProfile}
+              disabled={saving}
+              className="rounded-2xl bg-white px-6 py-3.5 text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save changes"}
+            </button>
+
+            <Link
+              href={`/author/${user.id}`}
+              className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3.5 text-center text-sm font-bold text-white/65 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            >
+              Open public profile
+            </Link>
+
+          </div>
+
+        </section>
+
       </div>
     </main>
   );
