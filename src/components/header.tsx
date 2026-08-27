@@ -13,6 +13,7 @@ import {
   User,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -136,6 +137,7 @@ export function Header() {
 
         {/* RIGHT SIDE */}
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
 
           <button
             type="button"
@@ -246,6 +248,13 @@ export function Header() {
       {open && (
         <div className="border-t border-slate-200/70 bg-white md:hidden">
           <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500">
+                Appearance
+              </span>
+              <ThemeToggle />
+            </div>
 
             <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-400">
               <Search className="h-4 w-4" />
