@@ -99,56 +99,58 @@ export default async function HomePage() {
   const latestPosts = posts.slice(1, 7);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fc] text-slate-950">
+    <main className="min-h-screen overflow-x-hidden bg-[#09090b] text-white">
+      {/* BACKGROUND ATMOSPHERE */}
+
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-40 top-20 h-[500px] w-[500px] rounded-full bg-violet-600/[0.07] blur-[140px]" />
+
+        <div className="absolute right-[-180px] top-[30%] h-[500px] w-[500px] rounded-full bg-blue-500/[0.06] blur-[140px]" />
+
+        <div className="absolute bottom-[-200px] left-[30%] h-[500px] w-[500px] rounded-full bg-fuchsia-500/[0.04] blur-[140px]" />
+      </div>
+
       {/* HERO */}
 
-      <section className="relative overflow-hidden border-b border-slate-200 bg-white">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-40 -top-40 h-[420px] w-[420px] rounded-full bg-violet-200/50 blur-3xl"
-        />
+      <section className="relative overflow-hidden border-b border-white/[0.07]">
+        <div className="mx-auto max-w-7xl px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10 lg:pb-24 lg:pt-24">
+          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+            {/* HERO COPY */}
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-40 -left-40 h-[420px] w-[420px] rounded-full bg-blue-100/70 blur-3xl"
-        />
-
-        <div className="relative mx-auto max-w-7xl px-5 pb-16 pt-14 sm:px-8 sm:pb-20 sm:pt-20 lg:px-10 lg:pb-24 lg:pt-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
-            {/* HERO TEXT */}
-
-            <div className="max-w-3xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Ideas worth discovering
+            <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-white/45 backdrop-blur-xl">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+                The modern writing community
               </div>
 
-              <h1 className="text-5xl font-black leading-[0.98] tracking-[-0.055em] text-slate-950 sm:text-6xl lg:text-7xl">
-                Read ideas.
+              <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.06em] sm:text-6xl lg:text-7xl">
+                Ideas deserve
                 <br />
-                <span className="text-slate-400">
-                  Share yours.
+                <span className="bg-gradient-to-r from-white via-white to-white/35 bg-clip-text text-transparent">
+                  a place to live.
                 </span>
               </h1>
 
-              <p className="mt-7 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg sm:leading-8">
-                BlogVerse is a place for writers, developers, creators
-                and builders to publish useful ideas and discover
-                perspectives from people around the world.
+              <p className="mt-7 max-w-2xl text-base leading-7 text-white/45 sm:text-lg sm:leading-8">
+                Read thoughtful stories, discover useful ideas and
+                publish your own perspective with the BlogVerse
+                community.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/blogs"
-                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-slate-950/10 transition hover:-translate-y-0.5 hover:bg-slate-800"
+                  className="group inline-flex items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-sm font-black text-black transition duration-300 hover:-translate-y-0.5 hover:bg-white/90"
                 >
-                  Explore blogs
-                  <span className="ml-2">→</span>
+                  Explore stories
+                  <span className="ml-2 transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
                 </Link>
 
                 <Link
                   href="/create"
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-black text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.035] px-6 py-3.5 text-sm font-bold text-white/75 backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
                 >
                   Start writing
                 </Link>
@@ -156,45 +158,45 @@ export default async function HomePage() {
 
               {/* STATS */}
 
-              <div className="mt-12 grid max-w-xl grid-cols-3 border-y border-slate-200 py-5">
+              <div className="mt-12 grid max-w-xl grid-cols-3 border-y border-white/[0.07] py-6">
                 <div>
                   <p className="text-2xl font-black tracking-tight">
                     {publishedBlogs}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-slate-400">
-                    Articles
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/30">
+                    Stories
                   </p>
                 </div>
 
-                <div className="border-l border-slate-200 pl-5">
+                <div className="border-l border-white/[0.07] pl-5">
                   <p className="text-2xl font-black tracking-tight">
                     {writers}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-slate-400">
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/30">
                     Writers
                   </p>
                 </div>
 
-                <div className="border-l border-slate-200 pl-5">
+                <div className="border-l border-white/[0.07] pl-5">
                   <p className="text-2xl font-black tracking-tight">
                     {totalLikes}
                   </p>
-                  <p className="mt-1 text-xs font-semibold text-slate-400">
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-white/30">
                     Likes
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* HERO FEATURE */}
+            {/* FEATURED STORY */}
 
             <div className="relative">
               {featured ? (
                 <Link
                   href={`/blog/${featured.slug}`}
-                  className="group block overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl shadow-slate-200/60 transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  className="group block overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] shadow-2xl shadow-black/30 backdrop-blur-xl transition duration-500 hover:-translate-y-1 hover:border-white/15"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                  <div className="relative aspect-[16/10] overflow-hidden bg-white/[0.04]">
                     {featured.cover_image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -203,49 +205,53 @@ export default async function HomePage() {
                         className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-violet-100">
-                        <span className="text-7xl font-black text-slate-200">
+                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-white/[0.08] via-white/[0.025] to-violet-500/[0.08]">
+                        <span className="text-7xl font-black text-white/[0.08]">
                           BV
                         </span>
                       </div>
                     )}
 
-                    <div className="absolute left-5 top-5 rounded-full bg-white/95 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm">
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
+
+                    <div className="absolute left-5 top-5 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/80 backdrop-blur-xl">
                       Featured
                     </div>
                   </div>
 
                   <div className="p-6 sm:p-7">
-                    <div className="mb-3 flex items-center gap-2 text-xs font-bold text-violet-600">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-violet-300">
                       <span>{getCategory(featured)}</span>
-                      <span className="text-slate-300">•</span>
-                      <span>
+
+                      <span className="text-white/20">•</span>
+
+                      <span className="text-white/30">
                         {formatDate(featured.created_at)}
                       </span>
                     </div>
 
-                    <h2 className="text-2xl font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">
+                    <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl">
                       {featured.title}
                     </h2>
 
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/40">
                       {truncate(featured.excerpt, 180)}
                     </p>
 
-                    <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
-                      <span className="text-sm font-bold text-slate-600">
+                    <div className="mt-6 flex items-center justify-between border-t border-white/[0.07] pt-5">
+                      <span className="max-w-[55%] truncate text-sm font-bold text-white/55">
                         {getAuthor(featured)}
                       </span>
 
-                      <span className="text-sm font-black text-slate-950 transition group-hover:translate-x-1">
-                        Read article →
+                      <span className="text-sm font-black text-white transition group-hover:translate-x-1">
+                        Read story →
                       </span>
                     </div>
                   </div>
                 </Link>
               ) : (
-                <div className="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-2xl font-black shadow-sm">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-10 text-center backdrop-blur-xl">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.05] text-2xl font-black">
                     BV
                   </div>
 
@@ -253,14 +259,14 @@ export default async function HomePage() {
                     Your first story starts here.
                   </h2>
 
-                  <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-500">
+                  <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-white/40">
                     Publish an article and it will appear on the
                     BlogVerse homepage.
                   </p>
 
                   <Link
                     href="/create"
-                    className="mt-6 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white"
+                    className="mt-6 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-black"
                   >
                     Create article →
                   </Link>
@@ -271,42 +277,42 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* DISCOVERY */}
+      {/* LATEST STORIES */}
 
       <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-violet-600">
-              Discovery
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-violet-400">
+              Latest stories
             </p>
 
-            <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-              Fresh from the community
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+              Fresh from BlogVerse
             </h2>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              Explore recent stories, technical ideas and perspectives
-              from BlogVerse writers.
+            <p className="mt-3 max-w-xl text-sm leading-6 text-white/35">
+              New perspectives, technical discoveries and stories
+              from writers building and learning every day.
             </p>
           </div>
 
           <Link
             href="/blogs"
-            className="text-sm font-black text-slate-700 transition hover:text-slate-950"
+            className="text-sm font-black text-white/55 transition hover:text-white"
           >
-            View all blogs →
+            View all →
           </Link>
         </div>
 
         {latestPosts.length > 0 ? (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {latestPosts.map((post) => (
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
-                className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70"
+                className="group overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.025] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-white/[0.14] hover:bg-white/[0.045] hover:shadow-2xl hover:shadow-black/30"
               >
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                <div className="relative aspect-[16/10] overflow-hidden bg-white/[0.04]">
                   {post.cover_image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -315,17 +321,19 @@ export default async function HomePage() {
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-                      <span className="text-4xl font-black text-slate-300">
+                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-white/[0.06] to-violet-500/[0.05]">
+                      <span className="text-4xl font-black text-white/[0.08]">
                         BV
                       </span>
                     </div>
                   )}
+
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/50 to-transparent" />
                 </div>
 
                 <div className="p-5">
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-slate-400">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-white/30">
+                    <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 py-1 text-violet-300/80">
                       {getCategory(post)}
                     </span>
 
@@ -340,20 +348,20 @@ export default async function HomePage() {
                     </span>
                   </div>
 
-                  <h3 className="mt-4 line-clamp-2 text-xl font-black leading-tight tracking-tight">
+                  <h3 className="mt-4 line-clamp-2 text-xl font-black leading-tight tracking-tight text-white">
                     {post.title}
                   </h3>
 
-                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/35">
                     {truncate(post.excerpt)}
                   </p>
 
-                  <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="truncate pr-3 text-xs font-bold text-slate-500">
+                  <div className="mt-5 flex items-center justify-between border-t border-white/[0.07] pt-4">
+                    <span className="max-w-[65%] truncate text-xs font-bold text-white/35">
                       {getAuthor(post)}
                     </span>
 
-                    <span className="shrink-0 text-xs font-black text-slate-950 transition group-hover:translate-x-1">
+                    <span className="text-xs font-black text-white/60 transition group-hover:translate-x-1 group-hover:text-white">
                       Read →
                     </span>
                   </div>
@@ -362,68 +370,119 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="mt-10 rounded-[28px] border border-slate-200 bg-white p-10 text-center">
+          <div className="mt-10 rounded-[28px] border border-white/10 bg-white/[0.025] p-10 text-center">
             <h3 className="text-xl font-black">
-              No more articles yet
+              No more stories yet
             </h3>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-white/35">
               Be one of the first writers on BlogVerse.
             </p>
 
             <Link
               href="/create"
-              className="mt-5 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white"
+              className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-black"
             >
-              Write your first article →
+              Write your first story →
             </Link>
           </div>
         )}
       </section>
 
-      {/* CTA */}
+      {/* WHY BLOGVERSE */}
 
       <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10 lg:pb-20">
-        <div className="relative overflow-hidden rounded-[32px] bg-slate-950 px-6 py-12 text-white sm:px-10 lg:px-14 lg:py-16">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-500/10 text-lg">
+              ✦
+            </div>
+
+            <h3 className="mt-5 text-lg font-black">
+              Discover
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-white/35">
+              Find interesting ideas and useful perspectives without
+              endless noise.
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/10 text-lg">
+              ✎
+            </div>
+
+            <h3 className="mt-5 text-lg font-black">
+              Create
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-white/35">
+              Turn your knowledge, experiences and ideas into
+              beautiful stories.
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-6">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-lg">
+              ↗
+            </div>
+
+            <h3 className="mt-5 text-lg font-black">
+              Connect
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-white/35">
+              Follow writers, engage with stories and become part of
+              the community.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+
+      <section className="mx-auto max-w-7xl px-5 pb-16 sm:px-8 lg:px-10 lg:pb-24">
+        <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-white/[0.07] via-white/[0.035] to-violet-500/[0.07] px-6 py-12 shadow-2xl shadow-black/30 sm:px-10 lg:px-14 lg:py-16">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-20 -top-32 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl"
+            className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-violet-500/[0.12] blur-[100px]"
           />
 
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl"
+            className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full bg-blue-500/[0.08] blur-[100px]"
           />
 
           <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
             <div className="max-w-2xl">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
-                Your voice matters
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
+                Start your next chapter
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-                Have an idea worth sharing?
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.04em] sm:text-4xl">
+                Have something worth saying?
               </h2>
 
-              <p className="mt-3 text-sm leading-6 text-white/55 sm:text-base">
-                Turn your thoughts into an article and let the
-                BlogVerse community discover your perspective.
+              <p className="mt-3 text-sm leading-6 text-white/40 sm:text-base">
+                Write it. Publish it. Let the right people discover
+                it.
               </p>
             </div>
 
             <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
               <Link
                 href="/create"
-                className="rounded-2xl bg-white px-6 py-3.5 text-center text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-100"
+                className="rounded-2xl bg-white px-6 py-3.5 text-center text-sm font-black text-black transition hover:-translate-y-0.5 hover:bg-white/90"
               >
                 Start writing →
               </Link>
 
               <Link
                 href="/blogs"
-                className="rounded-2xl border border-white/15 px-6 py-3.5 text-center text-sm font-bold text-white/80 transition hover:bg-white/10 hover:text-white"
+                className="rounded-2xl border border-white/10 bg-black/10 px-6 py-3.5 text-center text-sm font-bold text-white/65 transition hover:bg-white/[0.07] hover:text-white"
               >
-                Explore blogs
+                Browse stories
               </Link>
             </div>
           </div>
