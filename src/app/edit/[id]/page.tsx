@@ -1,5 +1,6 @@
-import { getGuestId, getGuestName } from "@/lib/guest";
 "use client";
+
+import { getGuestId, getGuestName } from "@/lib/guest";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
