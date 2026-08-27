@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DeletePostButton } from "@/components/delete-post-button";
 
 type Profile = {
   id: string;
@@ -626,6 +627,17 @@ export default function ProfilePage() {
                       <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-white/60">
                         {truncate(post.excerpt)}
                       </p>
+
+                      <div
+                        className="mt-3"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                      >
+                        <DeletePostButton
+                          postId={post.id}
+                          authorGuestId={user?.id}
+                        />
+                      </div>
 
                       <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-white/45">
                         <span>
