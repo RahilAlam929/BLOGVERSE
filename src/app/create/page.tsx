@@ -1,7 +1,5 @@
 "use client";
 
-import { getGuestId, getGuestName } from "@/lib/guest";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -94,10 +92,35 @@ export default function CreatePage() {
     if (loading) return;
 
     const supabase = createClient();
-    const guestId = getGuestId();
-    const guestName = getGuestName().trim() || "Anonymous";
 
     setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Please login before publishing an article.");
+      setLoading(false);
+      router.push("/login");
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, username")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const guestId = user.id;
+
+    const guestName =
+      profile?.name ||
+      profile?.username ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "Anonymous";
 
     try {
       let coverImage = "";
