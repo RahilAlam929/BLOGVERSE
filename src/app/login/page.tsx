@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,28 +29,39 @@ export default function LoginPage() {
       return;
     }
 
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: cleanEmail,
-      password,
-    });
+    try {
+      const supabase = createClient();
 
-    if (loginError) {
-      setError(loginError.message);
+      const { error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+      if (loginError) {
+        setError(loginError.message);
+        setLoading(false);
+        return;
+      }
+
+      setMessage("Login successful. Redirecting...");
+
+      router.replace("/");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to sign in. Please try again."
+      );
       setLoading(false);
-      return;
     }
-
-    setMessage("Login successful. Redirecting...");
-
-    router.replace("/");
-    router.refresh();
   }
 
   return (
     <main className="min-h-screen bg-[#f8fafc] px-5 py-12 text-slate-950 sm:px-8">
       <div className="mx-auto flex min-h-[80vh] max-w-md items-center justify-center">
         <div className="w-full rounded-[32px] border border-slate-200 bg-white p-7 shadow-[0_25px_80px_rgba(15,23,42,0.08)] sm:p-9">
-
           <Link
             href="/"
             className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-950 text-xl font-black text-white shadow-lg"
@@ -74,7 +84,6 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="mt-8 space-y-5">
-
             <div>
               <label className="mb-2 block text-xs font-bold text-slate-600">
                 Email
@@ -91,11 +100,9 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-600">
-                  Password
-                </label>
-              </div>
+              <label className="mb-2 block text-xs font-bold text-slate-600">
+                Password
+              </label>
 
               <input
                 type="password"
@@ -130,9 +137,11 @@ export default function LoginPage() {
 
           <div className="my-7 flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
+
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
               OR
             </span>
+
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 
