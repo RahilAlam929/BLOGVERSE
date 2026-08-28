@@ -13,18 +13,14 @@ type Profile = {
 };
 
 export default function EditProfilePage() {
-  const supabase = createClient();
-
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -32,47 +28,63 @@ export default function EditProfilePage() {
     let mounted = true;
 
     async function load() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const client = createClient();
 
-      const authUser = session?.user ?? null;
+        if (!mounted) return;
+        setSupabase(client);
 
-      if (!mounted) return;
+        const {
+          data: { session },
+        } = await client.auth.getSession();
 
-      if (!authUser) {
+        const authUser = session?.user ?? null;
+
+        if (!mounted) return;
+
+        if (!authUser) {
+          setLoading(false);
+          return;
+        }
+
+        setUser(authUser);
+
+        const { data, error: profileError } = await client
+          .from("profiles")
+          .select("id, name, username, avatar_url")
+          .eq("id", authUser.id)
+          .maybeSingle();
+
+        if (!mounted) return;
+
+        if (profileError) {
+          setError(profileError.message);
+        }
+
+        const current = data as Profile | null;
+
+        setProfile(current);
+
+        setName(
+          current?.name ||
+            authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            ""
+        );
+
+        setUsername(current?.username || "");
         setLoading(false);
-        return;
+      } catch (err) {
+        if (!mounted) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load your profile."
+        );
+
+        setLoading(false);
       }
-
-      setUser(authUser);
-
-      const { data, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, name, username, avatar_url")
-        .eq("id", authUser.id)
-        .maybeSingle();
-
-      if (!mounted) return;
-
-      if (profileError) {
-        setError(profileError.message);
-      }
-
-      const current = data as Profile | null;
-
-      setProfile(current);
-
-      setName(
-        current?.name ||
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          ""
-      );
-
-      setUsername(current?.username || "");
-
-      setLoading(false);
     }
 
     load();
@@ -80,10 +92,10 @@ export default function EditProfilePage() {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, []);
 
   async function saveProfile() {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     setSaving(true);
     setError("");
@@ -127,7 +139,6 @@ export default function EditProfilePage() {
     setProfile(data as Profile);
     setName(data.name || "");
     setUsername(data.username || "");
-
     setMessage("Profile updated successfully.");
     setSaving(false);
   }
@@ -135,6 +146,8 @@ export default function EditProfilePage() {
   async function uploadAvatar(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
+    if (!supabase) return;
+
     const file = event.target.files?.[0];
 
     if (!file || !user) return;
@@ -154,11 +167,6 @@ export default function EditProfilePage() {
       setUploading(false);
       return;
     }
-
-    /*
-      IMPORTANT:
-      Supabase Storage me "avatars" bucket create hona chahiye.
-    */
 
     const extension =
       file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -219,7 +227,6 @@ export default function EditProfilePage() {
     setProfile(data as Profile);
     setMessage("Profile photo updated.");
     setUploading(false);
-
     event.target.value = "";
   }
 
@@ -271,7 +278,6 @@ export default function EditProfilePage() {
   return (
     <main className="min-h-screen bg-[#07070a] px-5 pb-20 pt-24 text-white sm:px-8">
       <div className="mx-auto max-w-2xl">
-
         <Link
           href="/profile"
           className="inline-flex items-center gap-2 text-sm font-bold text-white/50 transition hover:text-white"
@@ -281,7 +287,6 @@ export default function EditProfilePage() {
         </Link>
 
         <div className="mt-6 overflow-hidden rounded-[30px] border border-white/[0.08] bg-white/[0.025]">
-
           <div className="border-b border-white/[0.07] px-6 py-6 sm:px-8">
             <h1 className="text-2xl font-black">
               Edit Profile
@@ -293,7 +298,6 @@ export default function EditProfilePage() {
           </div>
 
           <div className="space-y-7 p-6 sm:p-8">
-
             {error && (
               <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                 {error}
@@ -306,17 +310,13 @@ export default function EditProfilePage() {
               </div>
             )}
 
-            {/* AVATAR */}
-
             <div>
               <label className="text-sm font-bold text-white/70">
                 Profile photo
               </label>
 
               <div className="mt-4 flex items-center gap-5">
-
                 <div className="h-24 w-24 overflow-hidden rounded-full border border-white/10 bg-[#111116]">
-
                   {avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -329,11 +329,9 @@ export default function EditProfilePage() {
                       {initials || "U"}
                     </div>
                   )}
-
                 </div>
 
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-bold transition hover:bg-white/10">
-
                   <Camera className="h-4 w-4" />
 
                   {uploading
@@ -347,17 +345,13 @@ export default function EditProfilePage() {
                     disabled={uploading}
                     onChange={uploadAvatar}
                   />
-
                 </label>
-
               </div>
 
               <p className="mt-2 text-xs text-white/25">
                 JPG, PNG or WEBP. Maximum 5MB.
               </p>
             </div>
-
-            {/* NAME */}
 
             <div>
               <label
@@ -375,8 +369,6 @@ export default function EditProfilePage() {
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/25"
               />
             </div>
-
-            {/* USERNAME */}
 
             <div>
               <label
@@ -399,8 +391,6 @@ export default function EditProfilePage() {
               </p>
             </div>
 
-            {/* EMAIL */}
-
             <div>
               <label className="text-sm font-bold text-white/70">
                 Email
@@ -415,10 +405,7 @@ export default function EditProfilePage() {
               </p>
             </div>
 
-            {/* SAVE */}
-
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-
               <Link
                 href="/profile"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/10 px-6 py-3.5 text-sm font-bold text-white/60 transition hover:bg-white/[0.05] hover:text-white"
@@ -429,7 +416,7 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={saveProfile}
-                disabled={saving}
+                disabled={saving || !supabase}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-black text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
@@ -438,9 +425,7 @@ export default function EditProfilePage() {
                   ? "Saving..."
                   : "Save Changes"}
               </button>
-
             </div>
-
           </div>
         </div>
       </div>
