@@ -48,7 +48,7 @@ function truncate(text?: string | null, length = 100) {
 }
 
 export default function ProfilePage() {
-  const supabase = createClient();
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -64,12 +64,15 @@ export default function ProfilePage() {
     let mounted = true;
 
     async function loadProfile() {
+      const client = createClient();
+      if (!mounted) return;
+      setSupabase(client);
       setLoading(true);
       setError("");
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await client.auth.getSession();
 
       const authUser = session?.user ?? null;
 
@@ -84,7 +87,7 @@ export default function ProfilePage() {
       setUser(authUser);
 
       const { data: profileData, error: profileError } =
-        await supabase
+        await client
           .from("profiles")
           .select("id, name, username, avatar_url")
           .eq("id", authUser.id)
@@ -99,7 +102,7 @@ export default function ProfilePage() {
       setProfile((profileData ?? null) as Profile | null);
 
       const { data: postData, error: postsError } =
-        await supabase
+        await client
           .from("posts")
           .select(
             "id, title, slug, excerpt, cover_image, created_at"
@@ -115,7 +118,7 @@ export default function ProfilePage() {
 
       setPosts((postData ?? []) as Post[]);
 
-      const { count: followerCount } = await supabase
+      const { count: followerCount } = await client
         .from("follows")
         .select("id", {
           count: "exact",
@@ -123,7 +126,7 @@ export default function ProfilePage() {
         })
         .eq("following_id", authUser.id);
 
-      const { count: followingCount } = await supabase
+      const { count: followingCount } = await client
         .from("follows")
         .select("id", {
           count: "exact",
@@ -143,7 +146,7 @@ export default function ProfilePage() {
     return () => {
       mounted = false;
     };
-  }, [supabase]);
+  }, []);
 
   const displayName =
     profile?.name ||
