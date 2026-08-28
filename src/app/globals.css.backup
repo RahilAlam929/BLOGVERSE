@@ -1,0 +1,669 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  min-height: 100%;
+  background: #050505;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(124, 58, 237, 0.07), transparent 28%),
+    radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.06), transparent 25%),
+    #050505;
+  color: white;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.45);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* =========================================================
+   BLOGVERSE READING MODE
+   Wikipedia-inspired light/dark reading experience
+   ========================================================= */
+
+:root {
+  --reading-bg: #ffffff;
+  --reading-surface: #f8f9fa;
+  --reading-text: #202122;
+  --reading-muted: #54595d;
+  --reading-border: #c8ccd1;
+  --reading-accent: #3366cc;
+  --reading-code: #f8f9fa;
+}
+
+html.reading-dark {
+  --reading-bg: #09090b;
+  --reading-surface: #18181b;
+  --reading-text: #f4f4f5;
+  --reading-muted: #a1a1aa;
+  --reading-border: #3f3f46;
+  --reading-accent: #8b5cf6;
+  --reading-code: #111113;
+}
+
+html {
+  background: var(--reading-bg);
+}
+
+body {
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.reading-page {
+  min-height: 100vh;
+  background: var(--reading-bg);
+  color: var(--reading-text);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.reading-surface {
+  background: var(--reading-surface);
+  color: var(--reading-text);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.reading-text {
+  color: var(--reading-text);
+  transition: color 180ms ease;
+}
+
+.reading-muted {
+  color: var(--reading-muted);
+  transition: color 180ms ease;
+}
+
+.reading-border {
+  border-color: var(--reading-border);
+  transition: border-color 180ms ease;
+}
+
+.reading-image {
+  border-color: var(--reading-border);
+}
+
+.reading-code {
+  background: var(--reading-code);
+  color: var(--reading-text);
+}
+
+html.reading-dark .reading-page {
+  background: #09090b;
+}
+
+html.reading-dark body {
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+html.reading-dark .reading-code pre {
+  color: #e4e4e7;
+}
+
+html.reading-dark img {
+  filter: none;
+}
+
+html:not(.reading-dark) .reading-page {
+  background: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reading-page,
+  .reading-surface,
+  .reading-text,
+  .reading-muted,
+  .reading-border,
+  body {
+    transition: none;
+  }
+}
+
+/* ================================
+   BLOGVERSE READING MODE
+   ================================ */
+
+.reading-page {
+  --reading-bg: #ffffff;
+  --reading-text: #18181b;
+  --reading-muted: #71717a;
+  --reading-surface: #fafafa;
+  --reading-border: rgba(24, 24, 27, 0.10);
+  --reading-accent: #7c3aed;
+
+  min-height: 100vh;
+  background: var(--reading-bg);
+  color: var(--reading-text);
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+.reading-page.reading-dark {
+  --reading-bg: #09090b;
+  --reading-text: #f4f4f5;
+  --reading-muted: #a1a1aa;
+  --reading-surface: #18181b;
+  --reading-border: rgba(255, 255, 255, 0.10);
+  --reading-accent: #a78bfa;
+}
+
+.reading-text {
+  color: var(--reading-text);
+}
+
+.reading-muted {
+  color: var(--reading-muted);
+}
+
+.reading-surface {
+  background-color: var(--reading-surface);
+}
+
+.reading-border {
+  border-color: var(--reading-border);
+}
+
+.reading-image {
+  background-color: var(--reading-surface);
+}
+
+.reading-code {
+  background: var(--reading-surface);
+  color: var(--reading-text);
+}
+
+.reading-page a {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.reading-page textarea {
+  background: var(--reading-surface);
+  color: var(--reading-text);
+  border-color: var(--reading-border);
+}
+
+.reading-page textarea::placeholder {
+  color: var(--reading-muted);
+}
+
+.reading-page button,
+.reading-page a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth reading experience */
+.reading-page article {
+  transition: color 220ms ease;
+}
+
+/* Selection */
+.reading-page ::selection {
+  background: var(--reading-accent);
+  color: white;
+}
+
+/* =========================================
+   READING MODE - FORCE TEXT COLORS
+   ========================================= */
+
+.reading-page .reading-text,
+.reading-page h1,
+.reading-page h2,
+.reading-page h3,
+.reading-page h4,
+.reading-page h5,
+.reading-page h6,
+.reading-page p,
+.reading-page li,
+.reading-page blockquote,
+.reading-page strong,
+.reading-page span {
+  color: var(--reading-text);
+}
+
+.reading-page .reading-muted {
+  color: var(--reading-muted);
+}
+
+.reading-page .reading-text a {
+  color: var(--reading-text);
+}
+
+.reading-page .reading-code,
+.reading-page .reading-code pre,
+.reading-page .reading-code code {
+  color: var(--reading-text);
+}
+
+.reading-page.reading-dark {
+  color: #f4f4f5;
+}
+
+.reading-page.reading-dark h1,
+.reading-page.reading-dark h2,
+.reading-page.reading-dark h3,
+.reading-page.reading-dark h4,
+.reading-page.reading-dark h5,
+.reading-page.reading-dark h6,
+.reading-page.reading-dark p,
+.reading-page.reading-dark li,
+.reading-page.reading-dark blockquote,
+.reading-page.reading-dark strong,
+.reading-page.reading-dark .reading-text {
+  color: #f4f4f5;
+}
+
+.reading-page.reading-dark .reading-muted {
+  color: #a1a1aa;
+}
+
+/* =====================================================
+   BLOGVERSE READING THEME — FINAL OVERRIDE
+   ===================================================== */
+
+.reading-page {
+  --reading-bg: #ffffff;
+  --reading-text: #18181b;
+  --reading-muted: #71717a;
+  --reading-surface: #fafafa;
+  --reading-border: rgba(24, 24, 27, 0.12);
+  --reading-accent: #6d28d9;
+
+  background-color: #ffffff !important;
+  color: #18181b !important;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+/* DARK READING MODE */
+
+html.blogverse-reading-dark .reading-page {
+  --reading-bg: #09090b;
+  --reading-text: #f4f4f5;
+  --reading-muted: #a1a1aa;
+  --reading-surface: #18181b;
+  --reading-border: rgba(255, 255, 255, 0.12);
+  --reading-accent: #a78bfa;
+
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+/* ARTICLE BACKGROUND */
+
+.reading-page article,
+html.blogverse-reading-dark .reading-page article {
+  background-color: transparent !important;
+  color: var(--reading-text) !important;
+}
+
+/* HEADLINES */
+
+.reading-page h1,
+.reading-page h2,
+.reading-page h3,
+.reading-page h4,
+.reading-page h5,
+.reading-page h6 {
+  color: var(--reading-text) !important;
+}
+
+/* BODY TEXT */
+
+.reading-page p,
+.reading-page li,
+.reading-page blockquote,
+.reading-page strong,
+.reading-page code,
+.reading-page pre {
+  color: var(--reading-text) !important;
+}
+
+.reading-page .reading-text {
+  color: var(--reading-text) !important;
+}
+
+.reading-page .reading-muted {
+  color: var(--reading-muted) !important;
+}
+
+/* SURFACES */
+
+.reading-page .reading-surface {
+  background-color: var(--reading-surface) !important;
+}
+
+.reading-page .reading-border {
+  border-color: var(--reading-border) !important;
+}
+
+/* DARK COVER / IMAGES */
+
+html.blogverse-reading-dark .reading-page .reading-image {
+  background-color: #18181b !important;
+  border-color: var(--reading-border) !important;
+}
+
+/* CODE */
+
+.reading-page .reading-code {
+  background-color: var(--reading-surface) !important;
+  color: var(--reading-text) !important;
+  border-color: var(--reading-border) !important;
+}
+
+.reading-page .reading-code pre,
+.reading-page .reading-code code {
+  color: var(--reading-text) !important;
+}
+
+/* TEXTAREA */
+
+.reading-page textarea {
+  background-color: var(--reading-bg) !important;
+  color: var(--reading-text) !important;
+  border-color: var(--reading-border) !important;
+}
+
+.reading-page textarea::placeholder {
+  color: var(--reading-muted) !important;
+}
+
+/* LINKS */
+
+.reading-page a {
+  color: inherit;
+}
+
+.reading-page .reading-text a {
+  color: var(--reading-text) !important;
+}
+
+/* SELECTION */
+
+html.blogverse-reading-dark .reading-page ::selection {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+/* =========================================================
+   BLOGVERSE READING MODE — FULL PAGE THEME
+   ========================================================= */
+
+html,
+body {
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+/* LIGHT READING MODE */
+
+body {
+  background: #ffffff;
+}
+
+body:has(.reading-page) {
+  background: #ffffff;
+}
+
+.reading-page {
+  min-height: 100vh !important;
+  background: #ffffff !important;
+  color: #18181b !important;
+
+  --reading-bg: #ffffff;
+  --reading-text: #18181b;
+  --reading-muted: #71717a;
+  --reading-surface: #fafafa;
+  --reading-border: rgba(24, 24, 27, 0.12);
+  --reading-accent: #6d28d9;
+}
+
+/* =========================================================
+   DARK READING MODE
+   ========================================================= */
+
+html.blogverse-reading-dark,
+html.blogverse-reading-dark body {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+html.blogverse-reading-dark body:has(.reading-page) {
+  background-color: #09090b !important;
+}
+
+html.blogverse-reading-dark .reading-page {
+  min-height: 100vh !important;
+
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+
+  --reading-bg: #09090b;
+  --reading-text: #f4f4f5;
+  --reading-muted: #a1a1aa;
+  --reading-surface: #18181b;
+  --reading-border: rgba(255, 255, 255, 0.12);
+  --reading-accent: #a78bfa;
+}
+
+/* FULL ARTICLE AREA */
+
+html.blogverse-reading-dark .reading-page,
+html.blogverse-reading-dark .reading-page > div,
+html.blogverse-reading-dark .reading-page article {
+  background-color: #09090b !important;
+}
+
+/* HEADINGS */
+
+html.blogverse-reading-dark .reading-page h1,
+html.blogverse-reading-dark .reading-page h2,
+html.blogverse-reading-dark .reading-page h3,
+html.blogverse-reading-dark .reading-page h4,
+html.blogverse-reading-dark .reading-page h5,
+html.blogverse-reading-dark .reading-page h6 {
+  color: #f4f4f5 !important;
+}
+
+/* BODY TEXT */
+
+html.blogverse-reading-dark .reading-page p,
+html.blogverse-reading-dark .reading-page li,
+html.blogverse-reading-dark .reading-page blockquote,
+html.blogverse-reading-dark .reading-page strong,
+html.blogverse-reading-dark .reading-page .reading-text {
+  color: #f4f4f5 !important;
+}
+
+/* MUTED TEXT */
+
+html.blogverse-reading-dark .reading-page .reading-muted {
+  color: #a1a1aa !important;
+}
+
+/* CARDS */
+
+html.blogverse-reading-dark .reading-page .reading-surface {
+  background-color: #18181b !important;
+}
+
+/* BORDERS */
+
+html.blogverse-reading-dark .reading-page .reading-border {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* COMMENTS / INPUT */
+
+html.blogverse-reading-dark .reading-page textarea {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.blogverse-reading-dark .reading-page textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* CODE BLOCK */
+
+html.blogverse-reading-dark .reading-page .reading-code {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+/* IMAGE */
+
+html.blogverse-reading-dark .reading-page .reading-image {
+  background-color: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* SELECTION */
+
+html.blogverse-reading-dark .reading-page ::selection {
+  background-color: #7c3aed;
+  color: #ffffff;
+}
+
+/* ================================
+   BLOGVERSE READING THEME
+================================ */
+
+.reading-page {
+  --reading-bg: #ffffff;
+  --reading-surface: #ffffff;
+  --reading-text: #18181b;
+  --reading-muted: #71717a;
+  --reading-border: rgba(0, 0, 0, 0.10);
+  --reading-accent: #7c3aed;
+
+  min-height: 100vh;
+  background: var(--reading-bg);
+  color: var(--reading-text);
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+.reading-page[data-reading-theme="dark"] {
+  --reading-bg: #09090b;
+  --reading-surface: #111113;
+  --reading-text: #f4f4f5;
+  --reading-muted: #a1a1aa;
+  --reading-border: rgba(255, 255, 255, 0.10);
+  --reading-accent: #a78bfa;
+}
+
+.reading-surface {
+  background: var(--reading-surface);
+}
+
+.reading-text {
+  color: var(--reading-text);
+}
+
+.reading-muted {
+  color: var(--reading-muted);
+}
+
+.reading-border {
+  border-color: var(--reading-border);
+}
+
+.reading-code {
+  background: color-mix(
+    in srgb,
+    var(--reading-surface) 92%,
+    var(--reading-text) 8%
+  );
+  color: var(--reading-text);
+}
+
+.reading-image {
+  background: var(--reading-surface);
+}
+
+.reading-page,
+.reading-page * {
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    border-color 220ms ease;
+}
+
+/* Prevent Tailwind dark-mode classes from forcing white cards
+   inside the independent reading theme. */
+.reading-page .dark\:bg-white\/5 {
+  background: var(--reading-surface);
+}
+
+.reading-page .dark\:text-white {
+  color: var(--reading-text);
+}
+
+.reading-page .dark\:text-zinc-400 {
+  color: var(--reading-muted);
+}
+
+.reading-page .dark\:border-white\/10 {
+  border-color: var(--reading-border);
+}
