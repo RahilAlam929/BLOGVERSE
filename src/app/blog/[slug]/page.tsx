@@ -9,7 +9,7 @@ import { CommentThread } from "@/components/comment-thread";
 import { ShareSection } from "@/components/share-section";
 import { FollowButton } from "@/components/follow-button";
 import { DeletePostButton } from "@/components/delete-post-button";
-import { BlogDiscovery } from "@/components/blog-discovery";
+import BlogDiscovery from "@/components/blog-discovery";
 import { ReadingThemeToggle } from "@/components/reading-theme-toggle";
 
 type Block =
